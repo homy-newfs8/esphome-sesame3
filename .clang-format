@@ -1,0 +1,9 @@
+---
+BasedOnStyle: Chromium
+ColumnLimit: 132
+AlwaysBreakAfterReturnType: TopLevelDefinitions
+IncludeBlocks: Merge
+UseTab: ForIndentation
+TabWidth: 2
+IndentWidth: 2
+ReflowComments: false
