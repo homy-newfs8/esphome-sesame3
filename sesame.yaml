@@ -1,17 +1,20 @@
 esphome:
-  name: sesame
+  name: test1
   libraries:
-    - symlink://../../../../../../PlatformIO/Projects/libsesame3bt
+    - https://github.com/homy-newfs8/libsesame3bt#0.8.0
     - davetcc/TaskManagerIO @ ^1.4.0
   platformio_options:
-      build_flags:
-        - -std=gnu++17 -Wall -Wextra
-        - -DMBEDTLS_DEPRECATED_REMOVED -DCONFIG_BT_NIMBLE_ROLE_BROADCASTER_DISABLED -DCONFIG_BT_NIMBLE_ROLE_PERIPHERAL_DISABLED
-        - -DTM_ENABLE_CAPTURED_LAMBDAS
-      build_unflags:
-        - -std=gnu++11
+    build_flags:
+      - -std=gnu++17 -Wall -Wextra
+      - -DMBEDTLS_DEPRECATED_REMOVED -DCONFIG_BT_NIMBLE_ROLE_BROADCASTER_DISABLED -DCONFIG_BT_NIMBLE_ROLE_PERIPHERAL_DISABLED
+      - -DTM_ENABLE_CAPTURED_LAMBDAS
+    build_unflags:
+      - -std=gnu++11
 external_components:
-  - source: 'custom_components'
+  - source:
+      type: git
+      url: https://github.com/homy-newfs8/esphome-sesame3
+    components: [ sesame_lock ]
 
 esp32:
   board: seeed_xiao_esp32c3
@@ -48,10 +51,10 @@ lock:
     address: !secret sesame_address
     on_lock:
     - logger.log: "door locked"
-    - lock.lock: sesame_lock_2
-  - platform: sesame_lock
-    name: Sesame 2
-    id: sesame_lock_2
-    public_key: !secret sesame_pubkey
-    secret: !secret sesame_secret
-    address: !secret sesame_address2
+    # - lock.lock: sesame_lock_2
+  # - platform: sesame_lock
+  #   name: Sesame 2
+  #   id: sesame_lock_2
+  #   public_key: !secret sesame_pubkey
+  #   secret: !secret sesame_secret
+  #   address: !secret sesame_address2
