@@ -55,6 +55,6 @@ lock:
   # - platform: sesame_lock
   #   name: Sesame 2
   #   id: sesame_lock_2
-  #   public_key: !secret sesame_pubkey
-  #   secret: !secret sesame_secret
+  #   public_key: !secret sesame_pubkey2
+  #   secret: !secret sesame_secret2
   #   address: !secret sesame_address2
