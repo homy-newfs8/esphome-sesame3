@@ -18,6 +18,10 @@ class SesameLock : public lock::Lock, public Component {
 	void init(const char* pubkey, const char* secret, const char* btaddr);
 	void setup() override {}
 	void loop() override;
+	float get_setup_priority() const override {
+		// After the Wi-Fi has been done setup
+		return setup_priority::AFTER_WIFI;
+	}
 
  private:
 	enum class state_t : int8_t { not_connected, connecting, authenticating, running, wait_reboot };
