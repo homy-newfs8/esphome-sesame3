@@ -20,7 +20,7 @@ class SesameLock : public lock::Lock, public Component {
 	void loop() override;
 	float get_setup_priority() const override {
 		// After the Wi-Fi has been done setup
-		return setup_priority::AFTER_WIFI - 1.0f;
+		return setup_priority::AFTER_WIFI;
 	}
 
  private:
