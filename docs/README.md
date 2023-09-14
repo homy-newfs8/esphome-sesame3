@@ -13,6 +13,10 @@ You can use boards listed in [PlatformIO ESP32 board list](https://registry.plat
 
 Then customize `lock:` section to your taste!
 
+## Notes on SESAME bot
+
+SESAME bot supports `lock.open` action in addition to `lock.lock` and `lock.unlock`. `lock.open` performs the same behavior as a smartphone SESAME app.
+
 ## Related
 
 * SESAME access library for ESP32 [libsesame3bt](https://github.com/homy-newfs8/libsesame3bt)
