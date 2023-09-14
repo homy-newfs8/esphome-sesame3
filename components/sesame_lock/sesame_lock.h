@@ -11,11 +11,13 @@ using libsesame3bt::SesameClient;
 namespace esphome {
 namespace sesame_lock {
 
+using model_t = libsesame3bt::Sesame::model_t;
+
 class SesameLock : public lock::Lock, public Component {
  public:
 	// void write_state(bool state) override;
 	// void dump_config() override;
-	void init(const char* pubkey, const char* secret, const char* btaddr);
+	void init(model_t model, const char* pubkey, const char* secret, const char* btaddr);
 	void setup() override {}
 	void loop() override;
 	float get_setup_priority() const override {
@@ -46,6 +48,7 @@ class SesameLock : public lock::Lock, public Component {
 	static inline std::atomic<uint16_t> instances;
 
 	void control(const lock::LockCall& call) override;
+	void open_latch() override;
 	void set_state(state_t);
 	void reflect_lock_state();
 	void update_lock_state(lock::LockState);

@@ -35,7 +35,10 @@ SesameLock::static_init() {
 }
 
 void
-SesameLock::init(const char* pubkey, const char* secret, const char* btaddr) {
+SesameLock::init(model_t model, const char* pubkey, const char* secret, const char* btaddr) {
+	if (model == model_t::sesame_bot) {
+		traits.set_supports_open(true);
+	}
 	++instances;
 	tag_string = get_name();
 	TAG = tag_string.c_str();
@@ -47,7 +50,7 @@ SesameLock::init(const char* pubkey, const char* secret, const char* btaddr) {
 
 	BLEDevice::init("");
 	sesame.set_connect_timeout_sec(CONNECT_TIMEOUT_SEC);
-	if (!sesame.begin(BLEAddress(btaddr, BLE_ADDR_RANDOM), Sesame::model_t::sesame_3)) {
+	if (!sesame.begin(BLEAddress(btaddr, BLE_ADDR_RANDOM), model)) {
 		ESP_LOGE(TAG, "Failed to SesameClient::begin. May be unsupported model.");
 		mark_failed();
 		return;
@@ -139,6 +142,15 @@ SesameLock::control(const lock::LockCall& call) {
 		} else if (tobe == lock::LOCK_STATE_UNLOCKED) {
 			sesame.unlock("ESPHome");
 		}
+	}
+}
+
+void
+SesameLock::open_latch() {
+	if (sesame.get_model() == model_t::sesame_bot) {
+		sesame.click("ESPHome");
+	} else {
+		unlock();
 	}
 }
 

@@ -1,6 +1,6 @@
 # esphome-sesame3
 
-[ESPHome](https://esphome.io/) Smart Lock component for SESAME 3 / SESAME 4
+[ESPHome](https://esphome.io/) Smart Lock component for SESAME 5 / SESAME 5 PRO / SESAME bot / SESAME 3 / SESAME 4 / SESAME Bike
 
 ## HOW TO USE
 
@@ -15,5 +15,5 @@ Then customize `lock:` section to your taste!
 
 ## Related
 
-* SESAME access library [libsesame3bt](https://github.com/homy-newfs8/libsesame3bt)
-* SESAME 3 / SESAME 4 Smart Lock [CANDY HOUSE](https://jp.candyhouse.co/products/sesame5) (SESAME 3 and 4 are End of Sale)
+* SESAME access library for ESP32 [libsesame3bt](https://github.com/homy-newfs8/libsesame3bt)
+* SESAME 5 / SESAME 5 PRO Smart Lock [CANDY HOUSE](https://jp.candyhouse.co/products/sesame5) (SESAME 3 and 4 are End of Sale)
