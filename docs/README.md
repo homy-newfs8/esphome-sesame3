@@ -1,3 +1,6 @@
+---
+title: esphome-sesame3 | ESPHome component for SESAME 5 / SESAME 5 PRO / SESAME bot / SESAME 3 / SESAME 4 / SESAME Bike
+---
 # esphome-sesame3
 
 [ESPHome](https://esphome.io/) Smart Lock component for SESAME 5 / SESAME 5 PRO / SESAME bot / SESAME 3 / SESAME 4 / SESAME Bike
