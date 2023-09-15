@@ -9,14 +9,17 @@ esphome:
       - -std=gnu++17 -Wall -Wextra
       - -DMBEDTLS_DEPRECATED_REMOVED -DCONFIG_BT_NIMBLE_ROLE_BROADCASTER_DISABLED -DCONFIG_BT_NIMBLE_ROLE_PERIPHERAL_DISABLED
       - -DTM_ENABLE_CAPTURED_LAMBDAS
+# Configure the maximum number of connections as required
+      - -DCONFIG_BT_NIMBLE_MAX_CONNECTIONS=4
     build_unflags:
       - -std=gnu++11
 external_components:
-  - source: 'components'
-  # - source:
-  #     type: git
-  #     url: https://github.com/homy-newfs8/esphome-sesame3
-  #   components: [ sesame_lock ]
+  # - source: 'components'
+  - source:
+      type: git
+      url: https://github.com/homy-newfs8/esphome-sesame3
+      ref: v0.2.0
+    components: [ sesame_lock ]
 
 esp32:
   # board: seeed_xiao_esp32c3
@@ -51,7 +54,7 @@ captive_portal:
 
 # Supported devices examples
 # Choose one or more you want to use
-# It seems that you can only connect up to 3 devices. I don't know why.
+# If you need many BLE connections, modify CONFIG_BT_NIMBLE_MAX_CONNECTIONS setting above
 lock:
   - platform: sesame_lock
     name: Lock1
@@ -77,10 +80,10 @@ lock:
     public_key: !secret sesamebot_pubkey
     secret: !secret sesamebot_secret
     address: !secret sesamebot_address
-  # - platform: sesame_lock
-  #   name: Bike1
-  #   id: bike_1
-  #   model: sesame_bike
-  #   public_key: !secret sesamebike_pubkey
-  #   secret: !secret sesamebike_secret
-  #   address: !secret sesamebike_address
+  - platform: sesame_lock
+    name: Bike1
+    id: bike_1
+    model: sesame_bike
+    public_key: !secret sesamebike_pubkey
+    secret: !secret sesamebike_secret
+    address: !secret sesamebike_address
