@@ -1,5 +1,12 @@
 # Changelog
 
+## [v0.3.0] 2023-09-18
+
+### Major changes
+
+- Add `tag` configuration parameter, specifying tag string recorded in SESAME history (default: "ESPHome").
+- Add `lock(const char*)` / `unlock(const char *)` / `open(const char *)` functions (which can be called from lambdas).
+
 ## [v0.2.0] 2023-09-14
 
 ### Major changes

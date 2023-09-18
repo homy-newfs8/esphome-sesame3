@@ -17,13 +17,19 @@ class SesameLock : public lock::Lock, public Component {
  public:
 	// void write_state(bool state) override;
 	// void dump_config() override;
-	void init(model_t model, const char* pubkey, const char* secret, const char* btaddr);
+	void init(model_t model, const char* pubkey, const char* secret, const char* btaddr, const char* tag);
 	void setup() override {}
 	void loop() override;
 	float get_setup_priority() const override {
 		// After the Wi-Fi has been done setup
 		return setup_priority::AFTER_WIFI;
 	}
+	using lock::Lock::lock;
+	using lock::Lock::open;
+	using lock::Lock::unlock;
+	void lock(const char* tag);
+	void unlock(const char* tag);
+	void open(const char* tag);
 
  private:
 	enum class state_t : int8_t { not_connected, connecting, authenticating, running, wait_reboot };
@@ -37,6 +43,7 @@ class SesameLock : public lock::Lock, public Component {
 	std::optional<bool> ble_connect_result;
 	std::string tag_string;
 	const char* TAG;
+	const char* default_history_tag;
 	SesameClient::state_t sesame_state;
 	lock::LockState lock_state;
 	state_t state;
@@ -53,6 +60,7 @@ class SesameLock : public lock::Lock, public Component {
 	void reflect_lock_state();
 	void update_lock_state(lock::LockState);
 	void ble_connect_task();
+	bool operable_warn() const;
 
 	static bool static_init();
 };

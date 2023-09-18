@@ -35,10 +35,11 @@ SesameLock::static_init() {
 }
 
 void
-SesameLock::init(model_t model, const char* pubkey, const char* secret, const char* btaddr) {
+SesameLock::init(model_t model, const char* pubkey, const char* secret, const char* btaddr, const char* tag) {
 	if (model == model_t::sesame_bot) {
 		traits.set_supports_open(true);
 	}
+	default_history_tag = tag;
 	++instances;
 	tag_string = get_name();
 	TAG = tag_string.c_str();
@@ -72,6 +73,30 @@ SesameLock::init(model_t model, const char* pubkey, const char* secret, const ch
 		return;
 	}
 	set_state(state_t::not_connected);
+}
+
+void
+SesameLock::lock(const char* tag) {
+	if (!operable_warn()) {
+		return;
+	}
+	sesame.lock(tag);
+}
+
+void
+SesameLock::unlock(const char* tag) {
+	if (!operable_warn()) {
+		return;
+	}
+	sesame.unlock(tag);
+}
+
+void
+SesameLock::open(const char* tag) {
+	if (!operable_warn()) {
+		return;
+	}
+	sesame.click(tag);
 }
 
 void
@@ -129,26 +154,37 @@ SesameLock::set_state(state_t next_state) {
 	state_started = esphome::millis();
 }
 
-void
-SesameLock::control(const lock::LockCall& call) {
+bool
+SesameLock::operable_warn() const {
 	if (state != state_t::running) {
 		ESP_LOGW(TAG, "Not connected to SESAME yet, ignored requested action");
+		return false;
+	}
+	return true;
+}
+
+void
+SesameLock::control(const lock::LockCall& call) {
+	if (!operable_warn()) {
 		return;
 	}
 	if (call.get_state()) {
 		auto tobe = *call.get_state();
 		if (tobe == lock::LOCK_STATE_LOCKED) {
-			sesame.lock("ESPHome");
+			sesame.lock(default_history_tag);
 		} else if (tobe == lock::LOCK_STATE_UNLOCKED) {
-			sesame.unlock("ESPHome");
+			sesame.unlock(default_history_tag);
 		}
 	}
 }
 
 void
 SesameLock::open_latch() {
+	if (!operable_warn()) {
+		return;
+	}
 	if (sesame.get_model() == model_t::sesame_bot) {
-		sesame.click("ESPHome");
+		sesame.click(default_history_tag);
 	} else {
 		unlock();
 	}

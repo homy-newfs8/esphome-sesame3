@@ -1,7 +1,7 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import lock
-from esphome.const import CONF_ID, CONF_ADDRESS, CONF_MODEL
+from esphome.const import CONF_ID, CONF_ADDRESS, CONF_MODEL, CONF_TAG
 
 sesame_lock_ns = cg.esphome_ns.namespace('sesame_lock')
 SesameLock = sesame_lock_ns.class_('SesameLock', lock.Lock, cg.Component)
@@ -25,14 +25,15 @@ CONFIG_SCHEMA = lock.LOCK_SCHEMA.extend({
     cv.Required(CONF_MODEL): cv.enum(SESAME_MODELS),
     cv.Optional(CONF_PUBLIC_KEY, default=""): cv.string,
     cv.Required(CONF_SECRET): cv.string,
-    cv.Required(CONF_ADDRESS): cv.mac_address
+    cv.Required(CONF_ADDRESS): cv.mac_address,
+    cv.Optional(CONF_TAG, default="ESPHome"): cv.string,
 }).extend(cv.COMPONENT_SCHEMA)
 
 
 async def to_code(config):
     if config[CONF_MODEL] not in ("sesame_5", "sesame_5_pro") and not config[CONF_PUBLIC_KEY]:
-        raise cv.RequiredFieldInvalid("public_key is required for SESAME 3 / SESAME 4 / SESAME Bot / SESAME Bike")
+        raise cv.RequiredFieldInvalid("public_key is required for SESAME 3 / SESAME 4 / SESAME bot / SESAME Bike")
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
     await lock.register_lock(var, config)
-    cg.add(var.init(config[CONF_MODEL], config.get(CONF_PUBLIC_KEY), config[CONF_SECRET], str(config[CONF_ADDRESS])))
+    cg.add(var.init(config[CONF_MODEL], config.get(CONF_PUBLIC_KEY), config[CONF_SECRET], str(config[CONF_ADDRESS]), config[CONF_TAG]))
