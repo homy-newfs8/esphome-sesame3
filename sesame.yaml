@@ -2,7 +2,8 @@ esphome:
   name: entrance
   friendly_name: Entrance
   libraries:
-    - https://github.com/homy-newfs8/libsesame3bt#0.9.0
+    - https://github.com/homy-newfs8/libsesame3bt#0.11.0
+    # - symlink://../../../../../../PlatformIO/Projects/libsesame3bt
     - davetcc/TaskManagerIO @ ^1.4.0
   platformio_options:
     build_flags:
@@ -14,12 +15,12 @@ esphome:
     build_unflags:
       - -std=gnu++11
 external_components:
-  # - source: 'components'
   - source:
       type: git
       url: https://github.com/homy-newfs8/esphome-sesame3
-      ref: v0.3.0
-    components: [ sesame_lock ]
+      ref: v0.4.0
+    components: [ sesame_lock, sesame_ble ]
+  # - source: 'components'
 
 esp32:
   # board: seeed_xiao_esp32c3
@@ -94,7 +95,8 @@ lock:
   #   name: Lock2
   #   id: lock_2
   #   model: sesame_3
-  #   public_key: !secret sesame3_pubkey
+  #   # public_key: !secret sesame3_pubkey
+  #   public_key: foo
   #   secret: !secret sesame3_secret
   #   address: !secret sesame3_address
   # - platform: sesame_lock

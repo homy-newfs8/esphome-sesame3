@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.4.0] 2023-09-30
+
+- Add `sesame_ble` module. See README for usage.
+
 ## [v0.3.0] 2023-09-18
 
 ### Major changes
