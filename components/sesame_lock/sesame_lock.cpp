@@ -101,14 +101,17 @@ SesameLock::open(const char* tag) {
 
 void
 SesameLock::reflect_lock_state() {
+	if (!sesame_status) {
+		return;
+	}
 	lock::LockState new_lock_state;
-	if (sesame_status.in_lock()) {
-		if (sesame_status.in_unlock()) {
+	if (sesame_status->in_lock()) {
+		if (sesame_status->in_unlock()) {
 			new_lock_state = lock::LOCK_STATE_JAMMED;
 		} else {
 			new_lock_state = lock::LOCK_STATE_LOCKED;
 		}
-	} else if (sesame_status.in_unlock()) {
+	} else if (sesame_status->in_unlock()) {
 		new_lock_state = lock::LOCK_STATE_UNLOCKED;
 	} else {
 		new_lock_state = lock::LOCK_STATE_JAMMED;
@@ -263,6 +266,16 @@ SesameLock::ble_connect_task() {
 		xSemaphoreGive(ble_connect_mux);
 		taskManager.scheduleOnce(0, [this, rc]() { ble_connect_result = rc; });
 	}
+}
+
+float
+SesameLock::get_battery_pct() const {
+	return sesame_status ? sesame_status->battery_pct() : NAN;
+}
+
+float
+SesameLock::get_battery_voltage() const {
+	return sesame_status ? sesame_status->voltage() : NAN;
 }
 
 }  // namespace sesame_lock

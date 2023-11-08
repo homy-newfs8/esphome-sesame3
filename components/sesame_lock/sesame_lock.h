@@ -30,11 +30,13 @@ class SesameLock : public lock::Lock, public Component {
 	void lock(const char* tag);
 	void unlock(const char* tag);
 	void open(const char* tag);
+	float get_battery_pct() const;
+	float get_battery_voltage() const;
 
  private:
 	enum class state_t : int8_t { not_connected, connecting, authenticating, running, wait_reboot };
 	SesameClient sesame;
-	SesameClient::Status sesame_status;
+	std::optional<SesameClient::Status> sesame_status;
 	uint32_t last_connect_attempted;
 	uint32_t state_started;
 	uint32_t op_started;
