@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.5.0] 2023-11-11
+
+- Add battery reporting functions. See README for usage.
+
 ## [v0.4.0] 2023-09-30
 
 - Add `sesame_ble` module. See README for usage.
