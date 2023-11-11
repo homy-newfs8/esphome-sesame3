@@ -18,7 +18,7 @@ external_components:
   - source:
       type: git
       url: https://github.com/homy-newfs8/esphome-sesame3
-      ref: v0.4.0
+      ref: v0.5.0
     components: [ sesame_lock, sesame_ble ]
   # - source: 'components'
 
@@ -113,3 +113,23 @@ lock:
   #   public_key: !secret sesamebike_pubkey
   #   secret: !secret sesamebike_secret
   #   address: !secret sesamebike_address
+
+# SESAME battery remaining value can be exposed as sensor value.
+# Specify id: value of the lock as below.
+sensor:
+  - platform: template
+    name: "Lock1_battery_level"
+    device_class: battery
+    unit_of_measurement: '%'
+    update_interval: 30s
+    lambda: |-
+      auto v = id(lock_1).get_battery_pct();
+      return isnan(v) ? optional<float>{} : v;
+  - platform: template
+    name: "Lock1_battery_voltage"
+    device_class: voltage
+    unit_of_measurement: 'V'
+    update_interval: 30s
+    lambda: |-
+      auto v = id(lock_1).get_battery_voltage();
+      return isnan(v) ? optional<float>{} : v;
