@@ -105,38 +105,15 @@ SesameLock::reflect_lock_state() {
 		return;
 	}
 	lock::LockState new_lock_state;
-	if (sesame_status->in_lock()) {
-		if (sesame_status->in_unlock()) {
-			new_lock_state = lock::LOCK_STATE_JAMMED;
-		} else {
-			new_lock_state = lock::LOCK_STATE_LOCKED;
-		}
-	} else if (sesame_status->in_unlock()) {
+	if (sesame_status->in_unlock()) {
 		new_lock_state = lock::LOCK_STATE_UNLOCKED;
+	} else if (sesame_status->in_lock()) {
+		new_lock_state = lock::LOCK_STATE_LOCKED;
 	} else {
-		new_lock_state = lock::LOCK_STATE_JAMMED;
-	}
-	if (op_started) {
-		if (esphome::millis() - op_started > OPERATION_TIMEOUT ||
-		    (lock_state == lock::LOCK_STATE_LOCKING && new_lock_state == lock::LOCK_STATE_LOCKED) ||
-		    (lock_state == lock::LOCK_STATE_UNLOCKING && new_lock_state == lock::LOCK_STATE_UNLOCKED)) {
-			update_lock_state(lock::LOCK_STATE_JAMMED);
-			op_started = 0;
-		}
+		// lock status not determined
 		return;
 	}
-	if (jam_detected) {
-		if (new_lock_state != lock::LOCK_STATE_JAMMED || esphome::millis() - jam_detected > JAMMED_TIMEOUT) {
-			update_lock_state(new_lock_state);
-			jam_detected = 0;
-		}
-		return;
-	}
-	if (new_lock_state == lock::LOCK_STATE_JAMMED) {
-		jam_detected = esphome::millis();
-	} else {
-		update_lock_state(new_lock_state);
-	}
+	update_lock_state(new_lock_state);
 }
 
 void
@@ -243,9 +220,6 @@ SesameLock::loop() {
 			if (sesame_state != SesameClient::state_t::active) {
 				set_state(state_t::not_connected);
 				break;
-			}
-			if (op_started || jam_detected) {
-				reflect_lock_state();
 			}
 			break;
 		case state_t::wait_reboot:

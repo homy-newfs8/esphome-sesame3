@@ -39,8 +39,6 @@ class SesameLock : public lock::Lock, public Component {
 	std::optional<SesameClient::Status> sesame_status;
 	uint32_t last_connect_attempted;
 	uint32_t state_started;
-	uint32_t op_started;
-	uint32_t jam_detected;
 	TaskHandle_t ble_connect_task_id;
 	std::optional<bool> ble_connect_result;
 	std::string tag_string;
