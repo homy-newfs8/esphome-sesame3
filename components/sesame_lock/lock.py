@@ -1,13 +1,26 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import lock
-from esphome.const import CONF_ID, CONF_ADDRESS, CONF_MODEL, CONF_TAG
+from esphome.components import sensor
+from esphome.const import (
+    CONF_ID,
+    CONF_ADDRESS,
+    CONF_MODEL,
+    CONF_TAG,
+    UNIT_PERCENT,
+    UNIT_VOLT,
+    DEVICE_CLASS_BATTERY,
+    DEVICE_CLASS_VOLTAGE,
+    STATE_CLASS_MEASUREMENT,
+)
 
-sesame_lock_ns = cg.esphome_ns.namespace('sesame_lock')
-SesameLock = sesame_lock_ns.class_('SesameLock', lock.Lock, cg.Component)
+sesame_lock_ns = cg.esphome_ns.namespace("sesame_lock")
+SesameLock = sesame_lock_ns.class_("SesameLock", lock.Lock, cg.Component)
 
 CONF_PUBLIC_KEY = "public_key"
 CONF_SECRET = "secret"
+CONF_BATTERY_PCT = "battery_pct"
+CONF_BATTERY_VOLTAGE = "battery_voltage"
 
 SesameModel_t = sesame_lock_ns.enum("model_t", True)
 SESAME_MODELS = {
@@ -20,20 +33,53 @@ SESAME_MODELS = {
     "sesame_5_pro": SesameModel_t.sesame_5_pro,
 }
 
-CONFIG_SCHEMA = lock.LOCK_SCHEMA.extend({
-    cv.GenerateID(): cv.declare_id(SesameLock),
-    cv.Required(CONF_MODEL): cv.enum(SESAME_MODELS),
-    cv.Optional(CONF_PUBLIC_KEY, default=""): cv.string,
-    cv.Required(CONF_SECRET): cv.string,
-    cv.Required(CONF_ADDRESS): cv.mac_address,
-    cv.Optional(CONF_TAG, default="ESPHome"): cv.string,
-}).extend(cv.COMPONENT_SCHEMA)
+CONFIG_SCHEMA = lock.LOCK_SCHEMA.extend(
+    {
+        cv.GenerateID(): cv.declare_id(SesameLock),
+        cv.Required(CONF_MODEL): cv.enum(SESAME_MODELS),
+        cv.Optional(CONF_PUBLIC_KEY, default=""): cv.string,
+        cv.Required(CONF_SECRET): cv.string,
+        cv.Required(CONF_ADDRESS): cv.mac_address,
+        cv.Optional(CONF_TAG, default="ESPHome"): cv.string,
+        cv.Optional(CONF_BATTERY_PCT): sensor.sensor_schema(
+            unit_of_measurement=UNIT_PERCENT,
+            device_class=DEVICE_CLASS_BATTERY,
+            state_class=STATE_CLASS_MEASUREMENT,
+            accuracy_decimals=1,
+        ),
+        cv.Optional(CONF_BATTERY_VOLTAGE): sensor.sensor_schema(
+            unit_of_measurement=UNIT_VOLT,
+            device_class=DEVICE_CLASS_VOLTAGE,
+            state_class=STATE_CLASS_MEASUREMENT,
+            accuracy_decimals=1,
+        ),
+    }
+).extend(cv.COMPONENT_SCHEMA)
 
 
 async def to_code(config):
-    if config[CONF_MODEL] not in ("sesame_5", "sesame_5_pro") and not config[CONF_PUBLIC_KEY]:
-        raise cv.RequiredFieldInvalid("public_key is required for SESAME 3 / SESAME 4 / SESAME bot / SESAME Bike")
+    if (
+        config[CONF_MODEL] not in ("sesame_5", "sesame_5_pro")
+        and not config[CONF_PUBLIC_KEY]
+    ):
+        raise cv.RequiredFieldInvalid(
+            "public_key is required for SESAME 3 / SESAME 4 / SESAME bot / SESAME Bike"
+        )
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
     await lock.register_lock(var, config)
-    cg.add(var.init(config[CONF_MODEL], config.get(CONF_PUBLIC_KEY), config[CONF_SECRET], str(config[CONF_ADDRESS]), config[CONF_TAG]))
+    cg.add(
+        var.init(
+            config[CONF_MODEL],
+            config.get(CONF_PUBLIC_KEY),
+            config[CONF_SECRET],
+            str(config[CONF_ADDRESS]),
+            config[CONF_TAG],
+        )
+    )
+    if CONF_BATTERY_PCT in config:
+        s = await sensor.new_sensor(config[CONF_BATTERY_PCT])
+        cg.add(var.set_battery_pct_sensor(s))
+    if CONF_BATTERY_VOLTAGE in config:
+        s = await sensor.new_sensor(config[CONF_BATTERY_VOLTAGE])
+        cg.add(var.set_battery_voltage_sensor(s))

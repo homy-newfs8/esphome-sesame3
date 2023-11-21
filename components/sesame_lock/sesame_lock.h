@@ -2,6 +2,7 @@
 
 #include <SesameClient.h>
 #include <esphome/components/lock/lock.h>
+#include <esphome/components/sensor/sensor.h>
 #include <esphome/core/component.h>
 #include <atomic>
 #include <optional>
@@ -30,8 +31,8 @@ class SesameLock : public lock::Lock, public Component {
 	void lock(const char* tag);
 	void unlock(const char* tag);
 	void open(const char* tag);
-	float get_battery_pct() const;
-	float get_battery_voltage() const;
+	void set_battery_pct_sensor(sensor::Sensor* sensor) { pct_sensor = sensor; }
+	void set_battery_voltage_sensor(sensor::Sensor* sensor) { voltage_sensor = sensor; }
 
  private:
 	enum class state_t : int8_t { not_connected, connecting, authenticating, running, wait_reboot };
@@ -44,6 +45,8 @@ class SesameLock : public lock::Lock, public Component {
 	std::string tag_string;
 	const char* TAG;
 	const char* default_history_tag;
+	sensor::Sensor* pct_sensor = nullptr;
+	sensor::Sensor* voltage_sensor = nullptr;
 	SesameClient::state_t sesame_state;
 	lock::LockState lock_state;
 	state_t state;
@@ -57,7 +60,7 @@ class SesameLock : public lock::Lock, public Component {
 	void control(const lock::LockCall& call) override;
 	void open_latch() override;
 	void set_state(state_t);
-	void reflect_lock_state();
+	void reflect_sesame_status();
 	void update_lock_state(lock::LockState);
 	void ble_connect_task();
 	bool operable_warn() const;

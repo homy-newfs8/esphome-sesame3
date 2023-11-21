@@ -18,7 +18,7 @@ external_components:
   - source:
       type: git
       url: https://github.com/homy-newfs8/esphome-sesame3
-      ref: v0.5.0
+      ref: v0.6.0
     components: [ sesame_lock, sesame_ble ]
   # - source: 'components'
 
@@ -67,6 +67,9 @@ wifi:
 
 captive_portal:
 
+# Declare sensor (empty is sufficient) to expose the battery value of the SESAME lock.
+sensor:
+
 # Supported devices examples
 # Choose one or more you want to use
 # If you need many BLE connections, modify CONFIG_BT_NIMBLE_MAX_CONNECTIONS setting above
@@ -86,6 +89,12 @@ lock:
     public_key: ""
     secret: !secret sesame5_secret
     address: !secret sesame5_address
+    # expose battery remaining percentage with specified name
+    battery_pct:
+      name: "Lock1_battery_level"
+    # expose battery voltage with specified name
+    battery_voltage:
+      name: "Lock1_battery_voltage"
 
   # You can specify and control multiple SESAME devices with one ESP32.
   # This module reboots if one of specified devices unable to connect for a certain period of time.
@@ -113,23 +122,3 @@ lock:
   #   public_key: !secret sesamebike_pubkey
   #   secret: !secret sesamebike_secret
   #   address: !secret sesamebike_address
-
-# SESAME battery remaining value can be exposed as sensor value.
-# Specify id: value of the lock as below.
-sensor:
-  - platform: template
-    name: "Lock1_battery_level"
-    device_class: battery
-    unit_of_measurement: '%'
-    update_interval: 30s
-    lambda: |-
-      auto v = id(lock_1).get_battery_pct();
-      return isnan(v) ? optional<float>{} : v;
-  - platform: template
-    name: "Lock1_battery_voltage"
-    device_class: voltage
-    unit_of_measurement: 'V'
-    update_interval: 30s
-    lambda: |-
-      auto v = id(lock_1).get_battery_voltage();
-      return isnan(v) ? optional<float>{} : v;

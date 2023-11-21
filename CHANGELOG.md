@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.6.0] 2023-11-22
+
+- Embed the battery sensor functionality into the sesame_lock component itself (no need to define the sensor externally).
+
 ## [v0.5.0] 2023-11-11
 
 - Add battery reporting functions. See README for usage.

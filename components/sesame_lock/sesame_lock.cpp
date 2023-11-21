@@ -64,7 +64,7 @@ SesameLock::init(model_t model, const char* pubkey, const char* secret, const ch
 	sesame.set_state_callback([this](auto& client, auto state) { sesame_state = state; });
 	sesame.set_status_callback([this](auto& client, auto status) {
 		sesame_status = status;
-		taskManager.schedule(onceMillis(0), [this]() { reflect_lock_state(); });
+		taskManager.schedule(onceMillis(0), [this]() { reflect_sesame_status(); });
 	});
 	if (!xTaskCreateUniversal([](void* self) { static_cast<SesameLock*>(self)->ble_connect_task(); }, "bleconn", 2048, this, 0,
 	                          &ble_connect_task_id, CONFIG_ARDUINO_RUNNING_CORE)) {
@@ -100,7 +100,7 @@ SesameLock::open(const char* tag) {
 }
 
 void
-SesameLock::reflect_lock_state() {
+SesameLock::reflect_sesame_status() {
 	if (!sesame_status) {
 		return;
 	}
@@ -114,6 +114,12 @@ SesameLock::reflect_lock_state() {
 		return;
 	}
 	update_lock_state(new_lock_state);
+	if (pct_sensor) {
+		pct_sensor->publish_state(sesame_status->battery_pct());
+	}
+	if (voltage_sensor) {
+		voltage_sensor->publish_state(sesame_status->voltage());
+	}
 }
 
 void
@@ -240,16 +246,6 @@ SesameLock::ble_connect_task() {
 		xSemaphoreGive(ble_connect_mux);
 		taskManager.scheduleOnce(0, [this, rc]() { ble_connect_result = rc; });
 	}
-}
-
-float
-SesameLock::get_battery_pct() const {
-	return sesame_status ? sesame_status->battery_pct() : NAN;
-}
-
-float
-SesameLock::get_battery_voltage() const {
-	return sesame_status ? sesame_status->voltage() : NAN;
 }
 
 }  // namespace sesame_lock

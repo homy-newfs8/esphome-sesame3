@@ -1,6 +1,6 @@
 # esphome-sesame3
 
-[ESPHome](https://esphome.io/) Smart Lock component for SESAME 5 / SESAME 5 PRO / SESAME bot / SESAME 3 / SESAME 4 / SESAME Bike, control via Bluetooth LE
+[ESPHome](https://esphome.io/) Smart Lock component for CANDYHOUSE [SESAME 5](https://jp.candyhouse.co/products/sesame5) / [SESAME 5 PRO](https://jp.candyhouse.co/products/sesame5-pro) / [SESAME bot](https://jp.candyhouse.co/products/sesame3-bot) / SESAME 3 / SESAME 4 / SESAME Bike, control via Bluetooth LE
 
 # Setup this component
 
@@ -24,7 +24,7 @@ external_components:
   - source:
       type: git
       url: https://github.com/homy-newfs8/esphome-sesame3
-      ref: v0.5.0
+      ref: v0.6.0
     components: [ sesame_lock, sesame_ble ]
 ```
 
@@ -51,10 +51,16 @@ lock:
 In addition to base [Lock](https://esphome.io/components/lock/#base-lock-configuration) variables:
 
 * **model** (**Required**): Model of SESAME. Use one of: `sesame_5`, `sesame_5_pro`, `sesame_3`, `sesame_4`, `sesame_bot`, `sesame_bike`
-* **tag** (Optional, string): Tag value recorded on operation history. If you want to use various tag values on automation, see [below](#using-various-tag-values-on-operation).
+* **tag** (*Optional*, string): Tag value recorded on operation history. Defaults to "ESPHome". If you want to use various tag values on automation, see [below](#using-various-tag-values-on-operation).
 * **address** (**Required**, string): See [below](#parameter-values-for-your-sesame).
 * **secret** (**Required**, string): See [below](#parameter-values-for-your-sesame).
 * **public_key** (**Required** for SESAME OS2 models, string): See [below](#parameter-values-for-your-sesame).
+* **battery_pct** (*Optional*, sensor): See [below](#expose-sesame-battery-information-as-sensor-value)
+	* **name** (**Required**, string): The name of the battery level sensor.
+	* All other options from [sensor](https://esphome.io/components/sensor/#config-sensor)
+* **battery_voltage** (*Optional*, sensor): See [below](#expose-sesame-battery-information-as-sensor-value)
+	* **name** (**Required**, string): The name of the voltage sensor.
+	* All other options from [sensor](https://esphome.io/components/sensor/#config-sensor)
 
 ## Parameter values for your SESAME
 
@@ -162,29 +168,19 @@ lock:
 You can expose SESAME battery remaining percentage and voltage value, then show on your dashboard, use with your automation and etc. (in ESPHome and HomeAssistant)
 ![example dashboard](example-dashboard.jpg)
 
-Define sensor as below (inside `id()`, specify `id:` value in `lock:` configuration):
-
 ```yaml
+# needs at least empty sensor declaration
 sensor:
-  - platform: template
-    name: "Lock1_battery_level"
-    device_class: battery
-    unit_of_measurement: '%'
-    update_interval: 30s
-    lambda: |-
-      auto v = id(lock_1).get_battery_pct();
-      return isnan(v) ? optional<float>{} : v;
-  - platform: template
-    name: "Lock1_battery_voltage"
-    device_class: voltage
-    unit_of_measurement: 'V'
-    update_interval: 30s
-    lambda: |-
-      auto v = id(lock_1).get_battery_voltage();
-      return isnan(v) ? optional<float>{} : v;
-```
 
-With above configuration, battery remaining and battery voltage are appear as `sensor.entrance_lock1_battery_pct` and `sensor.entrance_lock1_battery_voltage` on Home Assistant ("entrance" is the entity name of ESPHome device).
+lock:
+  - platform: sesame_lock
+      :
+      :
+    battery_pct:
+      name: "Lock1_battery_level"
+    battery_voltage:
+      name: "Lock1_battery_voltage"
+```
 
 # Notes on SESAME bot
 
@@ -213,7 +209,7 @@ api:
 
 lock:
   - platform: sesame_lock
-    id: lock_i
+    id: lock_1
     name: lock1
       :
       :
