@@ -5,8 +5,6 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
-using libsesame3bt::Sesame;
-
 namespace {
 
 constexpr uint8_t CONNECT_TIMEOUT_SEC = 5;
@@ -36,13 +34,14 @@ SesameLock::static_init() {
 
 void
 SesameLock::init(model_t model, const char* pubkey, const char* secret, const char* btaddr, const char* tag) {
+	log_tag_string = get_name();
+	TAG = log_tag_string.c_str();
+
 	if (model == model_t::sesame_bot) {
 		traits.set_supports_open(true);
 	}
 	default_history_tag = tag;
 	++instances;
-	tag_string = get_name();
-	TAG = tag_string.c_str();
 	if (!SesameLock::initialized) {
 		ESP_LOGE(TAG, "Failed to initialize");
 		mark_failed();
@@ -66,6 +65,16 @@ SesameLock::init(model_t model, const char* pubkey, const char* secret, const ch
 		sesame_status = status;
 		taskManager.schedule(onceMillis(0), [this]() { reflect_sesame_status(); });
 	});
+	if (handle_history()) {
+		recv_history_tag.reserve(SesameClient::MAX_CMD_TAG_SIZE + 1);
+		sesame.set_history_callback([this](auto& client, const auto& history) {
+			recv_history_type = history.type;
+			recv_history_tag.assign(history.tag, history.tag_len);
+			ESP_LOGD(TAG, "hist: type=%u, str=(%u)%.*s", static_cast<uint8_t>(history.type), history.tag_len, history.tag_len,
+			         history.tag);
+			taskManager.schedule(onceMillis(0), [this]() { publish_lock_history_state(); });
+		});
+	}
 	if (!xTaskCreateUniversal([](void* self) { static_cast<SesameLock*>(self)->ble_connect_task(); }, "bleconn", 2048, this, 0,
 	                          &ble_connect_task_id, CONFIG_ARDUINO_RUNNING_CORE)) {
 		ESP_LOGE(TAG, "Failed to start connect task, reboot after 5 secs");
@@ -105,6 +114,10 @@ SesameLock::reflect_sesame_status() {
 		return;
 	}
 	lock::LockState new_lock_state;
+	if (sesame_status->in_lock() && sesame_status->in_unlock()) {
+		// lock status not determined
+		return;
+	}
 	if (sesame_status->in_unlock()) {
 		new_lock_state = lock::LOCK_STATE_UNLOCKED;
 	} else if (sesame_status->in_lock()) {
@@ -128,6 +141,21 @@ SesameLock::update_lock_state(lock::LockState new_state) {
 		return;
 	}
 	lock_state = new_state;
+	if (handle_history()) {
+		sesame.request_history();
+	} else {
+		publish_state(lock_state);
+	}
+}
+
+void
+SesameLock::publish_lock_history_state() {
+	if (history_type_sensor) {
+		history_type_sensor->publish_state(static_cast<uint8_t>(recv_history_type));
+	}
+	if (history_tag_sensor) {
+		history_tag_sensor->publish_state(recv_history_tag);
+	}
 	publish_state(lock_state);
 }
 

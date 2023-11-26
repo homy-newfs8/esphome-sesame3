@@ -3,16 +3,17 @@
 #include <SesameClient.h>
 #include <esphome/components/lock/lock.h>
 #include <esphome/components/sensor/sensor.h>
+#include <esphome/components/text_sensor/text_sensor.h>
 #include <esphome/core/component.h>
 #include <atomic>
 #include <optional>
 
-using libsesame3bt::SesameClient;
-
 namespace esphome {
 namespace sesame_lock {
 
-using model_t = libsesame3bt::Sesame::model_t;
+using libsesame3bt::Sesame;
+using libsesame3bt::SesameClient;
+using model_t = Sesame::model_t;
 
 class SesameLock : public lock::Lock, public Component {
  public:
@@ -33,6 +34,8 @@ class SesameLock : public lock::Lock, public Component {
 	void open(const char* tag);
 	void set_battery_pct_sensor(sensor::Sensor* sensor) { pct_sensor = sensor; }
 	void set_battery_voltage_sensor(sensor::Sensor* sensor) { voltage_sensor = sensor; }
+	void set_history_tag_sensor(text_sensor::TextSensor* sensor) { history_tag_sensor = sensor; }
+	void set_history_type_sensor(sensor::Sensor* sensor) { history_type_sensor = sensor; }
 
  private:
 	enum class state_t : int8_t { not_connected, connecting, authenticating, running, wait_reboot };
@@ -42,11 +45,15 @@ class SesameLock : public lock::Lock, public Component {
 	uint32_t state_started;
 	TaskHandle_t ble_connect_task_id;
 	std::optional<bool> ble_connect_result;
-	std::string tag_string;
+	std::string log_tag_string;
+	Sesame::history_type_t recv_history_type;
+	std::string recv_history_tag;
 	const char* TAG;
 	const char* default_history_tag;
 	sensor::Sensor* pct_sensor = nullptr;
 	sensor::Sensor* voltage_sensor = nullptr;
+	text_sensor::TextSensor* history_tag_sensor = nullptr;
+	sensor::Sensor* history_type_sensor = nullptr;
 	SesameClient::state_t sesame_state;
 	lock::LockState lock_state;
 	state_t state;
@@ -64,6 +71,8 @@ class SesameLock : public lock::Lock, public Component {
 	void update_lock_state(lock::LockState);
 	void ble_connect_task();
 	bool operable_warn() const;
+	void publish_lock_history_state();
+	bool handle_history() const { return history_tag_sensor || history_type_sensor; }
 
 	static bool static_init();
 };
