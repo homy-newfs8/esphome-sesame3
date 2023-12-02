@@ -16,7 +16,6 @@ from esphome.const import (
     DEVICE_CLASS_VOLTAGE,
     STATE_CLASS_NONE,
     STATE_CLASS_MEASUREMENT,
-    ENTITY_CATEGORY_DIAGNOSTIC,
 )
 
 sesame_lock_ns = cg.esphome_ns.namespace("sesame_lock")
@@ -60,9 +59,7 @@ CONFIG_SCHEMA = lock.LOCK_SCHEMA.extend(
             state_class=STATE_CLASS_MEASUREMENT,
             accuracy_decimals=1,
         ),
-        cv.Optional(CONF_HISTORY_TAG): text_sensor.text_sensor_schema(
-            entity_category=ENTITY_CATEGORY_DIAGNOSTIC
-        ),
+        cv.Optional(CONF_HISTORY_TAG): text_sensor.text_sensor_schema(),
         cv.Optional(CONF_HISTORY_TYPE): sensor.sensor_schema(
             unit_of_measurement=UNIT_EMPTY,
             device_class=DEVICE_CLASS_EMPTY,
