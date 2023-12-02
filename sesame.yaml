@@ -18,7 +18,7 @@ external_components:
   - source:
       type: git
       url: https://github.com/homy-newfs8/esphome-sesame3
-      ref: v0.6.0
+      ref: v0.7.0
     components: [ sesame_lock, sesame_ble ]
   # - source: 'components'
 
@@ -70,6 +70,9 @@ captive_portal:
 # Declare sensor (empty is sufficient) to expose the battery value of the SESAME lock.
 sensor:
 
+# Declare text_sensor (empty is sufficient) to expose the history tag value of the SESAME lock.
+text_sensor:
+
 # Supported devices examples
 # Choose one or more you want to use
 # If you need many BLE connections, modify CONFIG_BT_NIMBLE_MAX_CONNECTIONS setting above
@@ -95,6 +98,12 @@ lock:
     # expose battery voltage with specified name
     battery_voltage:
       name: "Lock1_battery_voltage"
+    # expose operation history tag text
+    history_tag:
+      name: "Lock1_history_tag"
+    # expose operation history type
+    history_type:
+      name: "Lock1_history_type"
 
   # You can specify and control multiple SESAME devices with one ESP32.
   # This module reboots if one of specified devices unable to connect for a certain period of time.
@@ -105,7 +114,7 @@ lock:
   #   id: lock_2
   #   model: sesame_3
   #   # public_key: !secret sesame3_pubkey
-  #   public_key: foo
+  #   public_key: !secret sesame3_pubkey
   #   secret: !secret sesame3_secret
   #   address: !secret sesame3_address
   # - platform: sesame_lock

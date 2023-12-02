@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.7.0] 2023-12-02
+
+- Add history TAG / type sensors.
+
 ## [v0.6.0] 2023-11-22
 
 - Embed the battery sensor functionality into the sesame_lock component itself (no need to define the sensor externally).

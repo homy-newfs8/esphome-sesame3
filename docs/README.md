@@ -61,6 +61,12 @@ In addition to base [Lock](https://esphome.io/components/lock/#base-lock-configu
 * **battery_voltage** (*Optional*, sensor): See [below](#expose-sesame-battery-information-as-sensor-value)
 	* **name** (**Required**, string): The name of the voltage sensor.
 	* All other options from [sensor](https://esphome.io/components/sensor/#config-sensor)
+* **history_tag** (*Optional*, text_sensor): See [below](#operation-history-tag-and-history-type)
+  * **name** (**Required**, string): The name of the history tag text_sensor.
+  * All other options from [text_sensor](https://esphome.io/components/text_sensor/#base-text-sensor-configuration)
+* **history_type** (*Optional*, sensor): See [below](#operation-history-tag-and-history-type)
+  * **name** (**Required**, string): The name of the history type sensor.
+  * All other options from [sensor](https://esphome.io/components/sensor/#config-sensor)
 
 ## Parameter values for your SESAME
 
@@ -181,6 +187,53 @@ lock:
     battery_voltage:
       name: "Lock1_battery_voltage"
 ```
+# Operation History TAG and History type
+
+You can expose who or what operated SESAME. These values are updated before lock/unlock state. Therefore, you can use history values in your automation's lock state change actions.
+
+```yaml
+# needs at least empty sensor declaration
+sensor:
+
+lock:
+  - platform: sesame_lock
+      :
+      :
+    history_tag:
+      name: "Lock1_history_tag"
+    history_type:
+      name: "Lock1_history_type"
+```
+## TAG string
+
+* User name of SESAME smartphone app
+* Registered fingerprint name of SESAME Touch
+* `tag` value of this module
+* Other API argument (Official Web API, SDK, etc.)
+
+## Type value
+
+| Value | Name                  | Comment                                                        |
+| ----: | --------------------- | -------------------------------------------------------------- |
+|     0 | NONE                  |                                                                |
+|     1 | BLE_LOCK              | By BT API (Smartphone app, SESAME Touch, this component, etc.) |
+|     2 | BLE_UNLOCK            | By BT API (Smartphone app, SESAME Touch, this component, etc.) |
+|     3 | TIME_CHANGED          |                                                                |
+|     4 | AUTOLOCK_UPDATED      |                                                                |
+|     5 | MECH_SETTING_UPDATED  |                                                                |
+|     6 | AUTOLOCK              |                                                                |
+|     7 | MANUAL_LOCKED         | By hand                                                        |
+|     8 | MANUAL_UNLOCKED       | By hand                                                        |
+|     9 | MANUAL_ELSE           |                                                                |
+|    10 | DRIVE_LOCKED          | SESAME bot                                                     |
+|    11 | DRIVE_UNLOCKED        | SESAME bot                                                     |
+|    12 | DRIVE_FAILED          |                                                                |
+|    13 | BLE_ADV_PARAM_UPDATED |                                                                |
+|    14 | WM2_LOCK              | By smartphone app (via Wi-Fi Module 2)                         |
+|    15 | WM2_UNLOCK            | By smartphone app (via Wi-Fi Module 2)                         |
+|    16 | WEB_LOCK              | By [Official Web API](https://doc.candyhouse.co/ja/SesameAPI/) |
+|    17 | WEB_UNLOCK            | By [Official Web API](https://doc.candyhouse.co/ja/SesameAPI/) |
+|    21 | DRIVE_CLICKED         | SESAME bot (Not listed in Android API)                          |
 
 # Notes on SESAME bot
 
@@ -217,11 +270,11 @@ lock:
 This service will be seen as `esphome.entrance_sesame_with_tag` on Home Assistant ("entrance" is the entity name of ESPHome device).
 
 ```yaml
-# Example Home Assistant Service Call
+# Example Home Assistant Service Call to toggle lock
 service: esphome.entrance_sesame_with_tag
 data:
   is_lock: "{{ not is_state('lock.entrance_lock1', 'locked') }}"
-  tag: "{{ trigger.payload }}"
+  tag: "{{ ***Anything*** }}"
 ```
 
 # Full example configuration file
