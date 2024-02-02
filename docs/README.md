@@ -26,6 +26,11 @@ external_components:
       url: https://github.com/homy-newfs8/esphome-sesame3
       ref: v0.7.0
     components: [ sesame_lock, sesame_ble ]
+
+# need (at least empty) sensor and text_sensor block.
+sensor:
+
+text_sensor:
 ```
 
 # Configure for your SESAME
@@ -279,7 +284,7 @@ data:
 
 # Full example configuration file
 
-See [sesame.yaml](sesame.yaml).
+See [sesame.yaml](../sesame.yaml).
 
 `wifi_ssid`, `wifi_passphrase`, `sesame_pubkey`, `sesame_secret`, `sesame_address` must be set according to your configuration. If you know how to use `secrets.yaml`, use it. If you don't, edit `sesame.yaml` (Remove `!secret ` when replace values).
 
