@@ -18,6 +18,8 @@ from esphome.const import (
     STATE_CLASS_MEASUREMENT,
 )
 
+DEPENDENCIES = ["sensor", "text_sensor"]
+
 sesame_lock_ns = cg.esphome_ns.namespace("sesame_lock")
 SesameLock = sesame_lock_ns.class_("SesameLock", lock.Lock, cg.Component)
 
