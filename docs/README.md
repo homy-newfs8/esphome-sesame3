@@ -2,6 +2,10 @@
 
 [ESPHome](https://esphome.io/) Smart Lock component for CANDYHOUSE [SESAME 5](https://jp.candyhouse.co/products/sesame5) / [SESAME 5 PRO](https://jp.candyhouse.co/products/sesame5-pro) / [SESAME bot](https://jp.candyhouse.co/products/sesame3-bot) / SESAME 3 / SESAME 4 / SESAME Bike, control via Bluetooth LE
 
+## Warning: Before use this component
+
+This component does not use the standard `BTClient` functionality of ESPHome. Therefore, this component cannot coexist with other BLE components in ESPHome. Use this module on a separate ESP32 device.
+
 # Setup this component
 
 You need to add compiler / library options to ESPHome base configuration, and `external_components` section link to this component.
@@ -93,7 +97,7 @@ Upload and start ESP32, logging message contains discovered SESAME devices infor
 
 Colon separated 6 bytes is Bluetooth address, if you have multiple SESAME devices, distinguish with UUID (See SESAME smartphone app).
 
-After finding the address, the above configuration lines should be removed.
+After finding the address, the above configuration lines (esp32_ble_tracker: and sesame_ble:) must be removed.
 
 ### secret (Secret key for your SESAME)
 
@@ -180,8 +184,10 @@ You can expose SESAME battery remaining percentage and voltage value, then show 
 ![example dashboard](example-dashboard.jpg)
 
 ```yaml
-# needs at least empty sensor declaration
+# needs at least empty sensor and text_sensor declaration
 sensor:
+
+text_sensor:
 
 lock:
   - platform: sesame_lock
@@ -199,6 +205,8 @@ You can expose who or what operated SESAME. These values are updated before lock
 ```yaml
 # needs at least empty sensor declaration
 sensor:
+
+text_sensor:
 
 lock:
   - platform: sesame_lock
