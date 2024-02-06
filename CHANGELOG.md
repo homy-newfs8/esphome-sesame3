@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.7.1] 2024-02-06
+
+- Make setup_priority customizable by yaml.
+- Update README slightly.
+
 ## [v0.7.0] 2023-12-02
 
 - Add history TAG / type sensors.
