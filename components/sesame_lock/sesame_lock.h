@@ -17,15 +17,10 @@ using model_t = Sesame::model_t;
 
 class SesameLock : public lock::Lock, public Component {
  public:
-	// void write_state(bool state) override;
-	// void dump_config() override;
+	SesameLock() { set_setup_priority(setup_priority::AFTER_WIFI); }
 	void init(model_t model, const char* pubkey, const char* secret, const char* btaddr, const char* tag);
 	void setup() override {}
 	void loop() override;
-	float get_setup_priority() const override {
-		// After the Wi-Fi has been done setup
-		return setup_priority::AFTER_WIFI;
-	}
 	using lock::Lock::lock;
 	using lock::Lock::open;
 	using lock::Lock::unlock;
