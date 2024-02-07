@@ -28,7 +28,7 @@ external_components:
   - source:
       type: git
       url: https://github.com/homy-newfs8/esphome-sesame3
-      ref: v0.7.1
+      ref: v0.7.2
     components: [ sesame_lock, sesame_ble ]
 
 # need (at least empty) sensor and text_sensor block.

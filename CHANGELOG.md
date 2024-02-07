@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.7.2] 2024-02-07
+
+- Enhance YAML validation.
+
 ## [v0.7.1] 2024-02-06
 
 - Make setup_priority customizable by yaml.
