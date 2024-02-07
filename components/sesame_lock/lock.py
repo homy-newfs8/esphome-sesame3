@@ -17,6 +17,7 @@ from esphome.const import (
     STATE_CLASS_NONE,
     STATE_CLASS_MEASUREMENT,
 )
+import string
 
 DEPENDENCIES = ["sensor", "text_sensor"]
 
@@ -41,45 +42,66 @@ SESAME_MODELS = {
     "sesame_5_pro": SesameModel_t.sesame_5_pro,
 }
 
-CONFIG_SCHEMA = lock.LOCK_SCHEMA.extend(
-    {
-        cv.GenerateID(): cv.declare_id(SesameLock),
-        cv.Required(CONF_MODEL): cv.enum(SESAME_MODELS),
-        cv.Optional(CONF_PUBLIC_KEY, default=""): cv.string,
-        cv.Required(CONF_SECRET): cv.string,
-        cv.Required(CONF_ADDRESS): cv.mac_address,
-        cv.Optional(CONF_TAG, default="ESPHome"): cv.string,
-        cv.Optional(CONF_BATTERY_PCT): sensor.sensor_schema(
-            unit_of_measurement=UNIT_PERCENT,
-            device_class=DEVICE_CLASS_BATTERY,
-            state_class=STATE_CLASS_MEASUREMENT,
-            accuracy_decimals=1,
-        ),
-        cv.Optional(CONF_BATTERY_VOLTAGE): sensor.sensor_schema(
-            unit_of_measurement=UNIT_VOLT,
-            device_class=DEVICE_CLASS_VOLTAGE,
-            state_class=STATE_CLASS_MEASUREMENT,
-            accuracy_decimals=1,
-        ),
-        cv.Optional(CONF_HISTORY_TAG): text_sensor.text_sensor_schema(),
-        cv.Optional(CONF_HISTORY_TYPE): sensor.sensor_schema(
-            unit_of_measurement=UNIT_EMPTY,
-            device_class=DEVICE_CLASS_EMPTY,
-            state_class=STATE_CLASS_NONE,
-            accuracy_decimals=0,
-        ),
-    }
-).extend(cv.COMPONENT_SCHEMA)
+
+def is_hex_string(str, valid_len):
+    return len(str) == valid_len and all(c in string.hexdigits for c in str)
+
+
+def valid_hexstring(key, valid_len):
+    def func(str):
+        if is_hex_string(str, valid_len):
+            return str
+        else:
+            raise cv.Invalid(f"'{key}' must be a {valid_len} bytes hex string")
+
+    return func
+
+
+def validate_pubkey(config):
+    if config[CONF_MODEL] not in ("sesame_5", "sesame_5_pro"):
+        if not config[CONF_PUBLIC_KEY]:
+            raise cv.RequiredFieldInvalid(
+                "'public_key' is required for SESAME 3 / SESAME 4 / SESAME bot / SESAME Bike"
+            )
+        valid_hexstring(CONF_PUBLIC_KEY, 128)(config[CONF_PUBLIC_KEY])
+    return config
+
+
+CONFIG_SCHEMA = cv.All(
+    lock.LOCK_SCHEMA.extend(
+        {
+            cv.GenerateID(): cv.declare_id(SesameLock),
+            cv.Required(CONF_MODEL): cv.enum(SESAME_MODELS),
+            cv.Optional(CONF_PUBLIC_KEY, default=""): cv.string,
+            cv.Required(CONF_SECRET): valid_hexstring(CONF_SECRET, 32),
+            cv.Required(CONF_ADDRESS): cv.mac_address,
+            cv.Optional(CONF_TAG, default="ESPHome"): cv.string,
+            cv.Optional(CONF_BATTERY_PCT): sensor.sensor_schema(
+                unit_of_measurement=UNIT_PERCENT,
+                device_class=DEVICE_CLASS_BATTERY,
+                state_class=STATE_CLASS_MEASUREMENT,
+                accuracy_decimals=1,
+            ),
+            cv.Optional(CONF_BATTERY_VOLTAGE): sensor.sensor_schema(
+                unit_of_measurement=UNIT_VOLT,
+                device_class=DEVICE_CLASS_VOLTAGE,
+                state_class=STATE_CLASS_MEASUREMENT,
+                accuracy_decimals=1,
+            ),
+            cv.Optional(CONF_HISTORY_TAG): text_sensor.text_sensor_schema(),
+            cv.Optional(CONF_HISTORY_TYPE): sensor.sensor_schema(
+                unit_of_measurement=UNIT_EMPTY,
+                device_class=DEVICE_CLASS_EMPTY,
+                state_class=STATE_CLASS_NONE,
+                accuracy_decimals=0,
+            ),
+        }
+    ).extend(cv.COMPONENT_SCHEMA),
+    validate_pubkey,
+)
 
 
 async def to_code(config):
-    if (
-        config[CONF_MODEL] not in ("sesame_5", "sesame_5_pro")
-        and not config[CONF_PUBLIC_KEY]
-    ):
-        raise cv.RequiredFieldInvalid(
-            "public_key is required for SESAME 3 / SESAME 4 / SESAME bot / SESAME Bike"
-        )
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
     await lock.register_lock(var, config)
