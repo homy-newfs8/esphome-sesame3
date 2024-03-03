@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.8.0] 2024-03-03
+
+- Start BLE connection according to `setup_priority` (was start connecton too early).
+- Strictly check conflicts with other BLE modules.
+
 ## [v0.7.2] 2024-02-07
 
 - Enhance YAML validation.

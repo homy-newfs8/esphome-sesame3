@@ -28,7 +28,7 @@ external_components:
   - source:
       type: git
       url: https://github.com/homy-newfs8/esphome-sesame3
-      ref: v0.7.2
+      ref: v0.8.0
     components: [ sesame_lock, sesame_ble ]
 
 # need (at least empty) sensor and text_sensor block.
@@ -81,7 +81,7 @@ In addition to base [Lock](https://esphome.io/components/lock/#base-lock-configu
 
 ### address (Bluetooth LE MAC Address)
 
-You can identify your SESAME address by using ESPHome BLE tracker with `sesame_ble` component. First, do not define `lock:` components and add below to your configuration:
+You can identify your SESAME address by using ESPHome BLE tracker with `sesame_ble` component. First, remove `lock:` component definition and add below to your configuration:
 
 ```yaml
 esp32_ble_tracker:
@@ -97,15 +97,15 @@ Upload and start ESP32, logging message contains discovered SESAME devices infor
 
 Colon separated 6 bytes is Bluetooth address, if you have multiple SESAME devices, distinguish with UUID (See SESAME smartphone app).
 
-After finding the address, the above configuration lines (esp32_ble_tracker: and sesame_ble:) must be removed.
+<b>sesami_lock component cannot coexist with other BLE components such as esp32_ble_tracker. Once you have identified SESAME's BLE address, you will need to remove the above configuration.</b>
 
-### secret (Secret key for your SESAME)
+### secret (Secret key of your SESAME)
 
 Secret is PSK for authentication and encryption. You can retrieve your SESAME's secret from QR code shown on SESAME smartphone app.
 
 #### Easy way
 
-Use [sesame-qr-reader](https://sesame-qr-reader.vercel.app/). Display 'Owner' or 'Manager' key on SESAME smartphone app, then upload the QR code image. Use the displayed `Secret Key` value.
+Use [sesame-qr-reader](https://sesame-qr-reader.vercel.app/). Display `Owner` or `Manager` key on SESAME smartphone app, then upload the QR code image. Use the displayed `Secret Key` value.
 
 #### DIY way
 
@@ -135,7 +135,7 @@ lock:
     secret: "0102030405060708090a0b0c0d0e0f10"
 ```
 
-On SESAME OS2 devices (SESAME 3 / 4 / bot / bike), `sk` is more long string and decoded binary is 99 bytes. Still the location of secret is the same.
+On SESAME OS2 devices (SESAME 3 / 4 / bot / bike), `sk` is more long string and decoded binary is 99 bytes. Still the location and length of secret is the same.
 
 
 ### public_key (Public key for SESAME OS2 devices)
