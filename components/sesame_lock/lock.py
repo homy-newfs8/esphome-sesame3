@@ -20,6 +20,7 @@ from esphome.const import (
 import string
 
 DEPENDENCIES = ["sensor", "text_sensor"]
+CONFLICTS_WITH = ["esp32_ble"]
 
 sesame_lock_ns = cg.esphome_ns.namespace("sesame_lock")
 SesameLock = sesame_lock_ns.class_("SesameLock", lock.Lock, cg.Component)
