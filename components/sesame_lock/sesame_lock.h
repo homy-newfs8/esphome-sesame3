@@ -19,7 +19,7 @@ class SesameLock : public lock::Lock, public Component {
  public:
 	SesameLock() { set_setup_priority(setup_priority::AFTER_WIFI); }
 	void init(model_t model, const char* pubkey, const char* secret, const char* btaddr, const char* tag);
-	void setup() override {}
+	void setup() override;
 	void loop() override;
 	using lock::Lock::lock;
 	using lock::Lock::open;

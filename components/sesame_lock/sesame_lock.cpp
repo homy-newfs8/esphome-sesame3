@@ -48,7 +48,6 @@ SesameLock::init(model_t model, const char* pubkey, const char* secret, const ch
 		return;
 	}
 
-	BLEDevice::init("");
 	sesame.set_connect_timeout_sec(CONNECT_TIMEOUT_SEC);
 	if (!sesame.begin(BLEAddress(btaddr, BLE_ADDR_RANDOM), model)) {
 		ESP_LOGE(TAG, "Failed to SesameClient::begin. May be unsupported model.");
@@ -75,13 +74,19 @@ SesameLock::init(model_t model, const char* pubkey, const char* secret, const ch
 			taskManager.schedule(onceMillis(0), [this]() { publish_lock_history_state(); });
 		});
 	}
+	set_state(state_t::not_connected);
+}
+
+void
+SesameLock::setup() {
+	ESP_LOGD(TAG, "Start connection");
+	BLEDevice::init("");
 	if (!xTaskCreateUniversal([](void* self) { static_cast<SesameLock*>(self)->ble_connect_task(); }, "bleconn", 2048, this, 0,
 	                          &ble_connect_task_id, CONFIG_ARDUINO_RUNNING_CORE)) {
 		ESP_LOGE(TAG, "Failed to start connect task, reboot after 5 secs");
 		mark_failed();
 		return;
 	}
-	set_state(state_t::not_connected);
 }
 
 void
