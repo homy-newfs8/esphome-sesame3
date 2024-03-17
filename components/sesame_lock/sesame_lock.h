@@ -1,25 +1,26 @@
 #pragma once
 
-#include <SesameClient.h>
+#include <esphome/components/ble_client/ble_client.h>
 #include <esphome/components/lock/lock.h>
 #include <esphome/components/sensor/sensor.h>
 #include <esphome/components/text_sensor/text_sensor.h>
 #include <esphome/core/component.h>
+#include <libsesame3bt/ClientCore.h>
 #include <atomic>
 #include <optional>
 
 namespace esphome {
 namespace sesame_lock {
 
-using libsesame3bt::Sesame;
-using libsesame3bt::SesameClient;
-using model_t = Sesame::model_t;
+using model_t = libsesame3bt::Sesame::model_t;
 
-class SesameLock : public lock::Lock, public Component {
+class SesameLock : public lock::Lock,
+                   public Component,
+                   public ble_client::BLEClientNode,
+                   private libsesame3bt::core::SesameClientBackend {
  public:
-	SesameLock() { set_setup_priority(setup_priority::AFTER_WIFI); }
-	void init(model_t model, const char* pubkey, const char* secret, const char* btaddr, const char* tag);
-	void setup() override;
+	SesameLock();
+	void init(model_t model, const char* pubkey, const char* secret, const char* tag);
 	void loop() override;
 	using lock::Lock::lock;
 	using lock::Lock::open;
@@ -34,14 +35,13 @@ class SesameLock : public lock::Lock, public Component {
 
  private:
 	enum class state_t : int8_t { not_connected, connecting, authenticating, running, wait_reboot };
-	SesameClient sesame;
-	std::optional<SesameClient::Status> sesame_status;
+	libsesame3bt::core::SesameClientCore sesame;
+	std::optional<libsesame3bt::core::Status> sesame_status;
 	uint32_t last_connect_attempted;
 	uint32_t state_started;
-	TaskHandle_t ble_connect_task_id;
 	std::optional<bool> ble_connect_result;
 	std::string log_tag_string;
-	Sesame::history_type_t recv_history_type;
+	libsesame3bt::Sesame::history_type_t recv_history_type;
 	std::string recv_history_tag;
 	const char* TAG;
 	const char* default_history_tag;
@@ -49,27 +49,26 @@ class SesameLock : public lock::Lock, public Component {
 	sensor::Sensor* voltage_sensor = nullptr;
 	text_sensor::TextSensor* history_tag_sensor = nullptr;
 	sensor::Sensor* history_type_sensor = nullptr;
-	SesameClient::state_t sesame_state;
+	libsesame3bt::core::SesameClientCore::state_t sesame_state;
 	lock::LockState lock_state;
 	state_t state;
 	int8_t connect_tried;
-
-	static bool initialized;
-	static inline SemaphoreHandle_t ble_connect_mux;
-	static inline StaticSemaphore_t ble_connect_mux_;
-	static inline std::atomic<uint16_t> instances;
+	uint16_t rx_handle;
+	uint16_t tx_handle;
 
 	void control(const lock::LockCall& call) override;
 	void open_latch() override;
 	void set_state(state_t);
 	void reflect_sesame_status();
 	void update_lock_state(lock::LockState);
-	void ble_connect_task();
 	bool operable_warn() const;
 	void publish_lock_history_state();
 	bool handle_history() const { return history_tag_sensor || history_type_sensor; }
+	void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t* param) override;
+	void reset();
 
-	static bool static_init();
+	virtual bool write_to_tx(const uint8_t* data, size_t size) override;
+	virtual void disconnect() override;
 };
 
 }  // namespace sesame_lock

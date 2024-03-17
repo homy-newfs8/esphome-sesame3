@@ -1,11 +1,8 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
-from esphome.components import lock
-from esphome.components import sensor
-from esphome.components import text_sensor
+from esphome.components import lock, sensor, text_sensor, ble_client
 from esphome.const import (
     CONF_ID,
-    CONF_ADDRESS,
     CONF_MODEL,
     CONF_TAG,
     UNIT_EMPTY,
@@ -19,11 +16,10 @@ from esphome.const import (
 )
 import string
 
-DEPENDENCIES = ["sensor", "text_sensor"]
-CONFLICTS_WITH = ["esp32_ble"]
+DEPENDENCIES = ["sensor", "text_sensor", "esp32_ble"]
 
 sesame_lock_ns = cg.esphome_ns.namespace("sesame_lock")
-SesameLock = sesame_lock_ns.class_("SesameLock", lock.Lock, cg.Component)
+SesameLock = sesame_lock_ns.class_("SesameLock", lock.Lock, cg.Component, ble_client.BLEClientNode)
 
 CONF_PUBLIC_KEY = "public_key"
 CONF_SECRET = "secret"
@@ -61,9 +57,7 @@ def valid_hexstring(key, valid_len):
 def validate_pubkey(config):
     if config[CONF_MODEL] not in ("sesame_5", "sesame_5_pro"):
         if not config[CONF_PUBLIC_KEY]:
-            raise cv.RequiredFieldInvalid(
-                "'public_key' is required for SESAME 3 / SESAME 4 / SESAME bot / SESAME Bike"
-            )
+            raise cv.RequiredFieldInvalid("'public_key' is required for SESAME 3 / SESAME 4 / SESAME bot / SESAME Bike")
         valid_hexstring(CONF_PUBLIC_KEY, 128)(config[CONF_PUBLIC_KEY])
     return config
 
@@ -75,7 +69,6 @@ CONFIG_SCHEMA = cv.All(
             cv.Required(CONF_MODEL): cv.enum(SESAME_MODELS),
             cv.Optional(CONF_PUBLIC_KEY, default=""): cv.string,
             cv.Required(CONF_SECRET): valid_hexstring(CONF_SECRET, 32),
-            cv.Required(CONF_ADDRESS): cv.mac_address,
             cv.Optional(CONF_TAG, default="ESPHome"): cv.string,
             cv.Optional(CONF_BATTERY_PCT): sensor.sensor_schema(
                 unit_of_measurement=UNIT_PERCENT,
@@ -97,7 +90,9 @@ CONFIG_SCHEMA = cv.All(
                 accuracy_decimals=0,
             ),
         }
-    ).extend(cv.COMPONENT_SCHEMA),
+    )
+    .extend(cv.COMPONENT_SCHEMA)
+    .extend(ble_client.BLE_CLIENT_SCHEMA),
     validate_pubkey,
 )
 
@@ -106,6 +101,7 @@ async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
     await lock.register_lock(var, config)
+    await ble_client.register_ble_node(var, config)
     if CONF_BATTERY_PCT in config:
         s = await sensor.new_sensor(config[CONF_BATTERY_PCT])
         cg.add(var.set_battery_pct_sensor(s))
@@ -123,7 +119,6 @@ async def to_code(config):
             config[CONF_MODEL],
             config.get(CONF_PUBLIC_KEY),
             config[CONF_SECRET],
-            str(config[CONF_ADDRESS]),
             config[CONF_TAG],
         )
     )
