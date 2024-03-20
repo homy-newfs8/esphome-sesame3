@@ -23,6 +23,8 @@ class Component_W : public Component {
 	virtual void component_loop() = 0;
 };
 
+enum class state_t { asis, registering, connect_again, wait_reboot, authenticating, connected, running };
+
 class SesameLock : public lock::Lock,
                    public Component_W,
                    public ble_client::BLEClientNode,
@@ -45,22 +47,11 @@ class SesameLock : public lock::Lock,
 	void set_history_type_sensor(sensor::Sensor* sensor) { history_type_sensor = sensor; }
 
  private:
-	enum class state_t : int8_t {
-		none,
-		discovering,
-		connecting,
-		connect_again,
-		authenticating,
-		disconnecting,
-		disconnected,
-		running,
-		wait_reboot
-	};
 	libsesame3bt::core::SesameClientCore sesame;
 	std::optional<libsesame3bt::core::Status> sesame_status;
 	std::string log_tag_string;
 	const char* TAG;
-	libsesame3bt::Sesame::history_type_t recv_history_type;
+	libsesame3bt::Sesame::history_type_t recv_history_type = libsesame3bt::Sesame::history_type_t::none;
 	std::string recv_history_tag;
 	const char* default_history_tag;
 
@@ -68,19 +59,23 @@ class SesameLock : public lock::Lock,
 	sensor::Sensor* voltage_sensor = nullptr;
 	text_sensor::TextSensor* history_tag_sensor = nullptr;
 	sensor::Sensor* history_type_sensor = nullptr;
-	lock::LockState lock_state;
+	lock::LockState lock_state = lock::LockState::LOCK_STATE_NONE;
 
-	uint32_t state_started;
-	state_t state = state_t::none;
+	uint32_t state_started = 0;
+	state_t state = state_t::asis;
 	uint32_t discover_timeout = 0;
 	uint16_t connect_limit = 0;
-	uint16_t connect_tried;
-	uint16_t rx_handle;
-	uint16_t tx_handle;
+	uint16_t connect_tried = 0;
+	uint16_t rx_handle = 0;
+	uint16_t tx_handle = 0;
+	bool once_found = false;
 
+	esphome::esp32_ble_tracker::ClientState last_node_state;
+
+	void set_state(state_t new_state);
+	void update_state();
 	virtual void control(const lock::LockCall& call) override;
 	virtual void open_latch() override;
-	void set_state(state_t, bool force = false);
 	void reflect_sesame_status();
 	void update_lock_state(lock::LockState);
 	bool operable_warn() const;
@@ -90,9 +85,11 @@ class SesameLock : public lock::Lock,
 	void reset();
 	void connect();
 
+	const char* state_str() const;
+
 	virtual bool write_to_tx(const uint8_t* data, size_t size) override;
 	virtual void disconnect() override;
 };
 
 }  // namespace sesame_lock
-}  //namespace esphome
+}  // namespace esphome
