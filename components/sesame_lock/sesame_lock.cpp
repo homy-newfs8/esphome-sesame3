@@ -7,14 +7,18 @@
 
 namespace {
 
-constexpr uint8_t CONNECT_TIMEOUT_SEC = 5;
-constexpr uint32_t CONNECT_RETRY_INTERVAL = 3'000;
-constexpr uint32_t CONNECT_STATE_TIMEOUT_MARGIN = 3'000;
-constexpr int8_t CONNECT_RETRY_LIMIT = 5;
-constexpr uint32_t AUTHENTICATE_TIMEOUT = 5'000;
-constexpr uint32_t OPERATION_TIMEOUT = 3'000;
-constexpr uint32_t JAMMED_TIMEOUT = 3'000;
-constexpr uint32_t REBOOT_DELAY_SEC = 5;
+constexpr uint32_t discover_timeout = 180'000;
+constexpr uint32_t CONNECT_TIMEOUT = 10'000;
+constexpr uint32_t DISCONNECT_TIMEOUT = 10'000;
+constexpr uint32_t AUTH_TIMEOUT = 5'000;
+constexpr uint32_t REBOOT_DELAY = 3'000;
+constexpr int8_t connect_limit = 10;
+constexpr uint32_t CONNECT_INTERVAL = 5'000;
+
+constexpr uint32_t
+sec(uint32_t ms) {
+	return ms / 1000;
+}
 
 }  // namespace
 
@@ -30,83 +34,80 @@ SesameLock::SesameLock() : sesame(*this) {}
 
 void
 SesameLock::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t* param) {
-	ESP_LOGV(TAG, "GATTC event = %u", static_cast<uint8_t>(event));
 	switch (event) {
 		case ESP_GATTC_OPEN_EVT: {
+			ESP_LOGD(TAG, "ESP_GATTC_OPEN_EVT");
 			if (param->open.status == ESP_GATT_OK) {
 				ESP_LOGI(TAG, "Connected");
+			} else {
+				ESP_LOGW(TAG, "Open failed, connect again");
+				set_state(state_t::connect_again);
 			}
 			break;
 		}
 
-		case ESP_GATTC_DISCONNECT_EVT: {
-			ESP_LOGI(TAG, "Disconnected");
-			reset();
+		case ESP_GATTC_CLOSE_EVT:
+			ESP_LOGD(TAG, "ESP_GATTC_CLOSE_EVT");
+			set_state(state_t::disconnected);
 			sesame.on_disconnected();
 			break;
-		}
 
 		case ESP_GATTC_SEARCH_CMPL_EVT: {
-			ESP_LOGD(TAG, "Initializing");
+			ESP_LOGD(TAG, "ESP_GATTC_SEARCH_CMPL_EVT");
+			if (param->search_cmpl.status != ESP_GATT_OK) {
+				ESP_LOGW(TAG, "GATT Search failed, disconnect");
+				set_state(state_t::disconnecting);
+				disconnect();
+				break;
+			}
 			auto* srv = this->parent()->get_service(ESPBTUUID::from_raw(Sesame::SESAME3_SRV_UUID));
 			if (srv == nullptr) {
-				ESP_LOGW(TAG, "No SESAME Service registered, confirm device MAC ADDRESS.");
+				ESP_LOGE(TAG, "No SESAME Service registered, confirm device MAC ADDRESS");
 				mark_failed();
-				return;
+				break;
 			}
 			auto* tx = srv->get_characteristic(ESPBTUUID::from_raw(Sesame::TxUUID));
 			if (tx == nullptr) {
-				ESP_LOGW(TAG, "Failed to get Tx char");
+				ESP_LOGE(TAG, "Failed to get TX char, confirm device MAC ADDRESS");
 				mark_failed();
-				return;
+				break;
 			}
 			tx_handle = tx->handle;
 
 			auto* rx = srv->get_characteristic(ESPBTUUID::from_raw(Sesame::RxUUID));
 			if (rx == nullptr) {
-				ESP_LOGW(TAG, "Failed to get Rx char");
+				ESP_LOGE(TAG, "Failed to get RX char, confirm device MAC ADDRESS");
 				mark_failed();
-				return;
+				break;
 			}
 			rx_handle = rx->handle;
-			auto* desc = rx->get_descriptor(ESPBTUUID::from_uint16(0x2902));
-			if (desc == nullptr) {
-				ESP_LOGW(TAG, "Failed to get Rx descr");
-				mark_failed();
-				return;
-			}
 			auto reg_status =
 			    esp_ble_gattc_register_for_notify(this->parent()->get_gattc_if(), this->parent()->get_remote_bda(), rx->handle);
 			if (reg_status) {
-				ESP_LOGW(TAG, "esp_ble_gattc_register_for_notify failed, status=%d", reg_status);
-				mark_failed();
-				return;
+				ESP_LOGW(TAG, "Failed to subscribe notification, connect again");
+				set_state(state_t::disconnecting);
+				disconnect();
+				break;
 			}
-
-			uint16_t req = 1;
-			auto status =
-			    esp_ble_gattc_write_char_descr(this->parent()->get_gattc_if(), this->parent()->get_conn_id(), desc->handle, sizeof(req),
-			                                   reinterpret_cast<uint8_t*>(&req), ESP_GATT_WRITE_TYPE_RSP, ESP_GATT_AUTH_REQ_NONE);
-			if (status != ESP_OK) {
-				ESP_LOGW(TAG, "Error sending subscribe request, status=%d", status);
-				mark_failed();
-				return;
-			}
-			this->node_state = espbt::ClientState::ESTABLISHED;
 			break;
 		}
 
 		case ESP_GATTC_REG_FOR_NOTIFY_EVT: {
+			ESP_LOGD(TAG, "ESP_GATTC_REG_FOR_NOTIFY_EVT");
+			this->node_state = espbt::ClientState::ESTABLISHED;
 			if (param->reg_for_notify.status != ESP_GATT_OK) {
 				ESP_LOGW(TAG, "Failed to register to notification, status=%u", param->reg_for_notify.status);
-				mark_failed();
-				return;
+				disconnect();
+				set_state(state_t::disconnecting);
+				break;
 			}
+			set_state(state_t::authenticating);
 			sesame.on_connected();
 			break;
 		}
 
 		case ESP_GATTC_NOTIFY_EVT: {
+			ESP_LOGD(TAG, "ESP_GATTC_NOTIFY_EVT");
 			if (param->notify.handle == rx_handle) {
 				ESP_LOGV(TAG, "received %ub", param->notify.value_len);
 				sesame.on_received(reinterpret_cast<std::byte*>(param->notify.value), param->notify.value_len);
@@ -115,6 +116,7 @@ SesameLock::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_
 		}
 
 		default:
+			ESP_LOGD(TAG, "GATTC event = %u", static_cast<uint8_t>(event));
 			break;
 	}
 }
@@ -140,7 +142,6 @@ SesameLock::init(model_t model, const char* pubkey, const char* secret, const ch
 		mark_failed();
 		return;
 	}
-	sesame.set_state_callback([this](auto& client, auto state) { sesame_state = state; });
 	sesame.set_status_callback([this](auto& client, auto status) {
 		sesame_status = status;
 		taskManager.schedule(onceMillis(0), [this]() { reflect_sesame_status(); });
@@ -155,7 +156,6 @@ SesameLock::init(model_t model, const char* pubkey, const char* secret, const ch
 			taskManager.schedule(onceMillis(0), [this]() { publish_lock_history_state(); });
 		});
 	}
-	set_state(state_t::not_connected);
 }
 
 void
@@ -234,8 +234,11 @@ SesameLock::publish_lock_history_state() {
 }
 
 void
-SesameLock::set_state(state_t next_state) {
-	if (state == next_state) {
+SesameLock::set_state(state_t next_state, bool force) {
+	if (!force && state == next_state) {
+		return;
+	}
+	if (state == state_t::wait_reboot) {
 		return;
 	}
 	state = next_state;
@@ -279,73 +282,90 @@ SesameLock::open_latch() {
 }
 
 void
-SesameLock::loop() {
+SesameLock::component_loop() {
 	taskManager.runLoop();
-	// switch (state) {
-	// 	case state_t::not_connected:
-	// 		if (connect_tried >= CONNECT_RETRY_LIMIT) {
-	// 			ESP_LOGE(TAG, "Cannot connect to SESAME %d times, reboot after %u secs", connect_tried, REBOOT_DELAY_SEC);
-	// 			set_state(state_t::wait_reboot);
-	// 			break;
-	// 		}
-	// 		if (!last_connect_attempted || esphome::millis() - last_connect_attempted >= CONNECT_RETRY_INTERVAL) {
-	// 			last_connect_attempted = esphome::millis();
-	// 			++connect_tried;
-	// 			ble_connect_result.reset();
-	// 			set_state(state_t::connecting);
-	// 		}
-	// 		break;
-	// 	case state_t::connecting:
-	// 		if (esphome::millis() - state_started > CONNECT_TIMEOUT_SEC * 1000 * instances + CONNECT_STATE_TIMEOUT_MARGIN) {
-	// 			ESP_LOGE(TAG, "Connect attempt not finished within expected time, reboot after %u secs", REBOOT_DELAY_SEC);
-	// 			set_state(state_t::wait_reboot);
-	// 			break;
-	// 		}
-	// 		if (ble_connect_result.has_value()) {
-	// 			if (*ble_connect_result) {
-	// 				ESP_LOGI(TAG, "Conncted to SESAME");
-	// 				set_state(state_t::authenticating);
-	// 			} else {
-	// 				ESP_LOGW(TAG, "Failed to connect to SESAME");
-	// 				set_state(state_t::not_connected);
-	// 			}
-	// 		}
-	// 		break;
-	// 	case state_t::authenticating:
-	// 		if (sesame_state == SesameClient::state_t::idle || esphome::millis() - state_started > AUTHENTICATE_TIMEOUT) {
-	// 			set_state(state_t::not_connected);
-	// 			break;
-	// 		}
-	// 		connect_tried = 0;
-	// 		if (sesame_state == SesameClient::state_t::active) {
-	// 			last_connect_attempted = 0;
-	// 			set_state(state_t::running);
-	// 			ESP_LOGI(TAG, "Authenticated by SESAME");
-	// 		}
-	// 		break;
-	// 	case state_t::running:
-	// 		if (sesame_state != SesameClient::state_t::active) {
-	// 			set_state(state_t::not_connected);
-	// 			break;
-	// 		}
-	// 		break;
-	// 	case state_t::wait_reboot:
-	// 		if (esphome::millis() - state_started > REBOOT_DELAY_SEC * 1000) {
-	// 			mark_failed();
-	// 			App.safe_reboot();
-	// 		}
-	// 		break;
-	// }
+	if (state == state_t::discovering && parent()->state() == espbt::ClientState::CONNECTING) {
+		set_state(state_t::connecting);
+	}
+	auto now = esphome::millis();
+	switch (state) {
+		case state_t::connect_again:
+			if (connect_limit) {
+				if (connect_tried >= connect_limit) {
+					ESP_LOGE(TAG, "Connect failed %u times, reboot after %u seconds", connect_tried, sec(REBOOT_DELAY));
+					set_state(state_t::wait_reboot);
+					break;
+				}
+			}
+			if (auto elapsed = now - state_started; elapsed > CONNECT_INTERVAL) {
+				connect();
+				set_state(state_t::connecting);
+			}
+			break;
+		case state_t::discovering:
+			if (discover_timeout) {
+				if (auto elapsed = now - state_started; elapsed > discover_timeout) {
+					ESP_LOGE(TAG, "SESAME not discovered too long (%u), reboot after %u seconds", sec(elapsed), sec(REBOOT_DELAY));
+					set_state(state_t::wait_reboot);
+				}
+			}
+			break;
+		case state_t::connecting:
+			if (auto elapsed = now - state_started; elapsed > CONNECT_TIMEOUT) {
+				ESP_LOGW(TAG, "Connection not established %u seconds. try again", sec(elapsed));
+				disconnect();
+				set_state(state_t::connect_again);
+			}
+			break;
+		case state_t::disconnecting:
+			if (auto elapsed = now - state_started; elapsed > DISCONNECT_TIMEOUT) {
+				ESP_LOGW(TAG, "Disconnect takes too long (%u), connect again", sec(elapsed));
+				set_state(state_t::connect_again);
+			}
+			break;
+		case state_t::disconnected:
+			ESP_LOGI(TAG, "SESAME Disconnected, connect again");
+			set_state(state_t::connect_again);
+			break;
+		case state_t::authenticating:
+			if (sesame.is_session_active()) {
+				set_state(state_t::running);
+				connect_tried = 0;
+				break;
+			}
+			if (auto elapsed = now - state_started; elapsed > AUTH_TIMEOUT) {
+				ESP_LOGW(TAG, "Authentication takes too long (%u), disconnect", sec(elapsed));
+				disconnect();
+				set_state(state_t::disconnecting);
+			}
+			break;
+		case state_t::wait_reboot:
+			if (auto elapsed = now - state_started; elapsed > REBOOT_DELAY) {
+				reset();
+				mark_failed();
+				App.safe_reboot();
+			}
+			break;
+		case state_t::running:
+			if (!sesame.is_session_active()) {
+				ESP_LOGW(TAG, "Session aborted, disconnecting");
+				set_state(state_t::disconnecting);
+				disconnect();
+			}
+			break;
+		case state_t::none:
+			break;
+	}
 }
 
 bool
 SesameLock::write_to_tx(const uint8_t* data, size_t size) {
 	if (tx_handle == 0) {
-		ESP_LOGW(TAG, "tx_handle not initialized");
+		ESP_LOGE(TAG, "tx_handle not initialized");
 		mark_failed();
 		return false;
 	}
-	ESP_LOGD(TAG, "write to %u %ub", tx_handle, size);
+	ESP_LOGV(TAG, "write to %u %ub", tx_handle, size);
 	auto status = esp_ble_gattc_write_char(this->parent()->get_gattc_if(), this->parent()->get_conn_id(), tx_handle, size,
 	                                       const_cast<uint8_t*>(data), ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NONE);
 	if (status != ESP_OK) {
@@ -358,6 +378,20 @@ SesameLock::write_to_tx(const uint8_t* data, size_t size) {
 void
 SesameLock::disconnect() {
 	parent()->disconnect();
+	reset();
+}
+
+void
+SesameLock::connect() {
+	parent()->connect();
+	connect_tried++;
+}
+
+void
+SesameLock::setup() {
+	reset();
+	set_state(state_t::discovering);
+	connect_tried = 1;
 }
 
 void
