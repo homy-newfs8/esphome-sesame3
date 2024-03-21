@@ -1,9 +1,6 @@
 #include "sesame_lock.h"
-#include <Arduino.h>
 #include <TaskManagerIO.h>
 #include <esphome/core/application.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
 
 namespace {
 
@@ -15,7 +12,7 @@ constexpr uint32_t CONNECT_INTERVAL = 5'000;
 
 constexpr uint32_t
 sec(uint32_t ms) {
-	return ms / 1000;
+	return ms / 1'000;
 }
 
 }  // namespace
@@ -85,7 +82,7 @@ SesameLock::update_state() {
 	}
 	last_node_state = node_state;
 	state = state_t::asis;
-	ESP_LOGD(TAG, "state changed to %u, %u = %s", state, last_node_state, state_str());
+	ESP_LOGD(TAG, "state=%s", state_str());
 	state_started = esphome::millis();
 }
 
@@ -99,13 +96,13 @@ SesameLock::set_state(state_t new_state) {
 			state_started = esphome::millis();
 			state = new_state;
 			last_node_state = node_state;
-			ESP_LOGD(TAG, "state changed to %u, %u = %s", state, last_node_state, state_str());
+			ESP_LOGD(TAG, "state=%s", state_str());
 		}
 	} else {
 		if (new_state != state) {
 			state_started = esphome::millis();
 			state = new_state;
-			ESP_LOGD(TAG, "state changed to %u, %u = %s", state, last_node_state, state_str());
+			ESP_LOGD(TAG, "state=%s", state_str());
 		}
 	}
 }
@@ -113,31 +110,24 @@ SesameLock::set_state(state_t new_state) {
 void
 SesameLock::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t* param) {
 	switch (event) {
-		case ESP_GATTC_OPEN_EVT: {
-			ESP_LOGD(TAG, "ESP_GATTC_OPEN_EVT");
-			break;
-		}
-
-		case ESP_GATTC_CLOSE_EVT:
-			ESP_LOGD(TAG, "ESP_GATTC_CLOSE_EVT");
-			break;
-
 		case ESP_GATTC_SEARCH_CMPL_EVT: {
-			ESP_LOGD(TAG, "ESP_GATTC_SEARCH_CMPL_EVT");
 			set_state(state_t::connected);
 			break;
 		}
 
 		case ESP_GATTC_REG_FOR_NOTIFY_EVT: {
-			ESP_LOGD(TAG, "ESP_GATTC_REG_FOR_NOTIFY_EVT");
-			// notification handler ready
-			this->node_state = espbt::ClientState::ESTABLISHED;
-			set_state(state_t::asis);
+			if (param->reg_for_notify.status == ESP_GATT_OK) {
+				// notification handler ready
+				this->node_state = espbt::ClientState::ESTABLISHED;
+				set_state(state_t::asis);
+			} else {
+				ESP_LOGW(TAG, "Failed to register notification, disconnect");
+				disconnect();
+			}
 			break;
 		}
 
 		case ESP_GATTC_NOTIFY_EVT: {
-			ESP_LOGD(TAG, "ESP_GATTC_NOTIFY_EVT");
 			if (param->notify.handle == rx_handle) {
 				ESP_LOGV(TAG, "received %ub", param->notify.value_len);
 				sesame.on_received(reinterpret_cast<std::byte*>(param->notify.value), param->notify.value_len);
@@ -146,12 +136,9 @@ SesameLock::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_
 		}
 
 		default:
-			ESP_LOGD(TAG, "GATTC event = %u", static_cast<uint8_t>(event));
 			break;
 	}
 }
-
-espbt::ClientState last_state = espbt::ClientState::IDLE;
 
 void
 SesameLock::component_loop() {
@@ -166,13 +153,12 @@ SesameLock::component_loop() {
 		case state_t::connect_again:
 			if (connect_limit) {
 				if (connect_tried >= connect_limit) {
-					ESP_LOGE(TAG, "Connect failed %u times, reboot after %u seconds", connect_tried, sec(REBOOT_DELAY));
+					ESP_LOGE(TAG, "Connect failed %u times, reboot after %lu seconds", connect_tried, sec(REBOOT_DELAY));
 					set_state(state_t::wait_reboot);
 					break;
 				}
 			}
 			if (elapsed > CONNECT_INTERVAL) {
-				ESP_LOGD(TAG, "try %u", connect_tried);
 				connect();
 				set_state(state_t::asis);
 			}
@@ -192,7 +178,7 @@ SesameLock::component_loop() {
 		case state_t::connected: {
 			auto* srv = this->parent()->get_service(ESPBTUUID::from_raw(Sesame::SESAME3_SRV_UUID));
 			if (srv == nullptr) {
-				ESP_LOGE(TAG, "No SESAME Service registered, confirm device MAC ADDRESS");
+				ESP_LOGE(TAG, "Connected device does not have SESAME Service, confirm device MAC ADDRESS");
 				mark_failed();
 				break;
 			}
@@ -236,7 +222,7 @@ SesameLock::component_loop() {
 				case ClientState::DISCONNECTING:
 					if (once_found && DISCONNECT_TIMEOUT) {
 						if (elapsed > DISCONNECT_TIMEOUT) {
-							ESP_LOGW(TAG, "Disconnecting last %u seconds, connect again", sec(elapsed));
+							ESP_LOGW(TAG, "Disconnecting last %lu seconds, connect again", sec(elapsed));
 							set_state(state_t::connect_again);
 						}
 					}
@@ -245,12 +231,21 @@ SesameLock::component_loop() {
 					if (once_found) {
 						sesame.on_disconnected();
 						set_state(state_t::connect_again);
+					} else {
+						if (discover_timeout) {
+							if (elapsed > discover_timeout) {
+								ESP_LOGW(TAG, "SESAME not found %lu seconds, rebooting after %lu seconds", sec(elapsed), sec(REBOOT_DELAY));
+								set_state(state_t::wait_reboot);
+							}
+						}
 					}
 					break;
 				case ClientState::SEARCHING:
-					if (elapsed > discover_timeout) {
-						ESP_LOGW(TAG, "SESAME not found %u seconds, rebooting after %u seconds", sec(elapsed), sec(REBOOT_DELAY));
-						set_state(state_t::wait_reboot);
+					if (discover_timeout) {
+						if (elapsed > discover_timeout) {
+							ESP_LOGW(TAG, "SESAME not found %lu seconds, rebooting after %lu seconds", sec(elapsed), sec(REBOOT_DELAY));
+							set_state(state_t::wait_reboot);
+						}
 					}
 					break;
 				case ClientState::DISCOVERED:
@@ -262,7 +257,7 @@ SesameLock::component_loop() {
 				case ClientState::CONNECTING:
 					if (once_found && CONNECT_TIMEOUT) {
 						if (elapsed > CONNECT_TIMEOUT) {
-							ESP_LOGW(TAG, "Cannot connect for %u seconds, disconnect", sec(elapsed));
+							ESP_LOGW(TAG, "Cannot connect for %lu seconds, disconnect", sec(elapsed));
 							disconnect();
 						}
 					}
@@ -301,7 +296,6 @@ void
 SesameLock::init(model_t model, const char* pubkey, const char* secret, const char* tag) {
 	log_tag_string = get_name();
 	TAG = log_tag_string.c_str();
-	ESP_LOGD(TAG, "init()");
 
 	if (model == model_t::sesame_bot) {
 		traits.set_supports_open(true);
@@ -455,7 +449,6 @@ void
 SesameLock::connect() {
 	parent()->connect();
 	connect_tried++;
-	ESP_LOGD(TAG, "connect tried %u times", connect_tried);
 }
 
 void

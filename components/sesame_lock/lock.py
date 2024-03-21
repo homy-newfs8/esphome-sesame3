@@ -27,6 +27,8 @@ CONF_BATTERY_PCT = "battery_pct"
 CONF_BATTERY_VOLTAGE = "battery_voltage"
 CONF_HISTORY_TAG = "history_tag"
 CONF_HISTORY_TYPE = "history_type"
+CONF_DISCOVER_TIMEOUT = "discover_timeout"
+CONF_CONNECT_RETRY_LIMIT = "connect_retry_limit"
 
 SesameModel_t = sesame_lock_ns.enum("model_t", True)
 SESAME_MODELS = {
@@ -89,6 +91,8 @@ CONFIG_SCHEMA = cv.All(
                 state_class=STATE_CLASS_NONE,
                 accuracy_decimals=0,
             ),
+            cv.Optional(CONF_DISCOVER_TIMEOUT): cv.positive_time_period_milliseconds,
+            cv.Optional(CONF_CONNECT_RETRY_LIMIT): cv.int_range(min=0, max=65535),
         }
     )
     .extend(cv.COMPONENT_SCHEMA)
@@ -114,6 +118,10 @@ async def to_code(config):
     if CONF_HISTORY_TYPE in config:
         s = await sensor.new_sensor(config[CONF_HISTORY_TYPE])
         cg.add(var.set_history_type_sensor(s))
+    if CONF_DISCOVER_TIMEOUT in config:
+        cg.add(var.set_discover_timeout(config[CONF_DISCOVER_TIMEOUT]))
+    if CONF_CONNECT_RETRY_LIMIT in config:
+        cg.add(var.set_connect_retry_limit(config[CONF_CONNECT_RETRY_LIMIT]))
     cg.add(
         var.init(
             config[CONF_MODEL],

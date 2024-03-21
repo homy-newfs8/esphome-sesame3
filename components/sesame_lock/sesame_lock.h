@@ -46,6 +46,9 @@ class SesameLock : public lock::Lock,
 	void set_history_tag_sensor(text_sensor::TextSensor* sensor) { history_tag_sensor = sensor; }
 	void set_history_type_sensor(sensor::Sensor* sensor) { history_type_sensor = sensor; }
 
+	void set_connect_retry_limit(uint16_t retry_limit) { connect_limit = retry_limit; }
+	void set_discover_timeout(uint32_t timeout) { discover_timeout = timeout; }
+
  private:
 	libsesame3bt::core::SesameClientCore sesame;
 	std::optional<libsesame3bt::core::Status> sesame_status;
