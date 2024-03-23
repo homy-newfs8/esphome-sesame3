@@ -18,6 +18,17 @@ import string
 
 DEPENDENCIES = ["sensor", "text_sensor", "esp32_ble"]
 
+lock_ns = cg.esphome_ns.namespace("lock")
+LockState_t = lock_ns.enum("LockState", False)
+LOCK_STATES = {
+    "NONE": LockState_t.LOCK_STATE_NONE,
+    "LOCKED": LockState_t.LOCK_STATE_LOCKED,
+    "UNLOCKED": LockState_t.LOCK_STATE_UNLOCKED,
+    "JAMMED": LockState_t.LOCK_STATE_JAMMED,
+    "LOCKING": LockState_t.LOCK_STATE_LOCKING,
+    "UNLOCKING": LockState_t.LOCK_STATE_UNLOCKING,
+}
+
 sesame_lock_ns = cg.esphome_ns.namespace("sesame_lock")
 SesameLock = sesame_lock_ns.class_("SesameLock", lock.Lock, cg.Component, ble_client.BLEClientNode)
 
@@ -29,6 +40,7 @@ CONF_HISTORY_TAG = "history_tag"
 CONF_HISTORY_TYPE = "history_type"
 CONF_DISCOVER_TIMEOUT = "discover_timeout"
 CONF_CONNECT_RETRY_LIMIT = "connect_retry_limit"
+CONF_UNKNOWN_STATE_ALTERNATIVE = "unknown_state_alternative"
 
 SesameModel_t = sesame_lock_ns.enum("model_t", True)
 SESAME_MODELS = {
@@ -93,6 +105,7 @@ CONFIG_SCHEMA = cv.All(
             ),
             cv.Optional(CONF_DISCOVER_TIMEOUT): cv.positive_time_period_milliseconds,
             cv.Optional(CONF_CONNECT_RETRY_LIMIT): cv.int_range(min=0, max=65535),
+            cv.Optional(CONF_UNKNOWN_STATE_ALTERNATIVE): cv.enum(LOCK_STATES),
         }
     )
     .extend(cv.COMPONENT_SCHEMA)
@@ -122,6 +135,8 @@ async def to_code(config):
         cg.add(var.set_discover_timeout(config[CONF_DISCOVER_TIMEOUT]))
     if CONF_CONNECT_RETRY_LIMIT in config:
         cg.add(var.set_connect_retry_limit(config[CONF_CONNECT_RETRY_LIMIT]))
+    if CONF_UNKNOWN_STATE_ALTERNATIVE in config:
+        cg.add(var.set_unknown_state_alternative(config[CONF_UNKNOWN_STATE_ALTERNATIVE]))
     cg.add(
         var.init(
             config[CONF_MODEL],

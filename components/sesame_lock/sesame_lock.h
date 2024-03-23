@@ -48,6 +48,7 @@ class SesameLock : public lock::Lock,
 
 	void set_connect_retry_limit(uint16_t retry_limit) { connect_limit = retry_limit; }
 	void set_discover_timeout(uint32_t timeout) { discover_timeout = timeout; }
+	void set_unknown_state_alternative(lock::LockState alternative) { unknown_state_alternative = alternative; }
 
  private:
 	libsesame3bt::core::SesameClientCore sesame;
@@ -63,9 +64,12 @@ class SesameLock : public lock::Lock,
 	text_sensor::TextSensor* history_tag_sensor = nullptr;
 	sensor::Sensor* history_type_sensor = nullptr;
 	lock::LockState lock_state = lock::LockState::LOCK_STATE_NONE;
+	lock::LockState unknown_state_alternative = lock::LockState::LOCK_STATE_NONE;
 
 	uint32_t state_started = 0;
-	state_t state = state_t::asis;
+	uint32_t last_history_requested = 0;
+	uint32_t last_notified = 0;
+	state_t ex_state = state_t::asis;
 	uint32_t discover_timeout = 0;
 	uint16_t connect_limit = 0;
 	uint16_t connect_tried = 0;
@@ -80,9 +84,10 @@ class SesameLock : public lock::Lock,
 	virtual void control(const lock::LockCall& call) override;
 	virtual void open_latch() override;
 	void reflect_sesame_status();
-	void update_lock_state(lock::LockState);
+	void update_lock_state(lock::LockState, bool force_publish = false);
 	bool operable_warn() const;
 	void publish_lock_history_state();
+	void publish_lock_state(bool force_publish = false);
 	bool handle_history() const { return history_tag_sensor || history_type_sensor; }
 	void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t* param) override;
 	void reset();

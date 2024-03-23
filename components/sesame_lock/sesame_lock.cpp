@@ -1,5 +1,4 @@
 #include "sesame_lock.h"
-#include <TaskManagerIO.h>
 #include <esphome/core/application.h>
 
 namespace {
@@ -9,6 +8,7 @@ constexpr uint32_t DISCONNECT_TIMEOUT = 2'000;
 constexpr uint32_t AUTH_TIMEOUT = 5'000;
 constexpr uint32_t REBOOT_DELAY = 3'000;
 constexpr uint32_t CONNECT_INTERVAL = 5'000;
+constexpr uint32_t HISTORY_TIMEOUT = 2'000;
 
 constexpr uint32_t
 sec(uint32_t ms) {
@@ -18,6 +18,7 @@ sec(uint32_t ms) {
 }  // namespace
 
 using esphome::esp32_ble::ESPBTUUID;
+using esphome::lock::LockState;
 using libsesame3bt::Sesame;
 using libsesame3bt::core::SesameClientCore;
 namespace espbt = esphome::esp32_ble_tracker;
@@ -30,7 +31,7 @@ SesameLock::SesameLock() : sesame(*this) {}
 const char*
 SesameLock::state_str() const {
 	using espbt::ClientState;
-	switch (state) {
+	switch (ex_state) {
 		case state_t::authenticating:
 			return "authenticating";
 		case state_t::connect_again:
@@ -74,34 +75,34 @@ SesameLock::state_str() const {
 
 void
 SesameLock::update_state() {
-	if (state == state_t::wait_reboot) {
+	if (ex_state == state_t::wait_reboot) {
 		return;
 	}
 	if (node_state == last_node_state) {
 		return;
 	}
 	last_node_state = node_state;
-	state = state_t::asis;
+	ex_state = state_t::asis;
 	ESP_LOGD(TAG, "state=%s", state_str());
 	state_started = esphome::millis();
 }
 
 void
 SesameLock::set_state(state_t new_state) {
-	if (state == state_t::wait_reboot) {
+	if (ex_state == state_t::wait_reboot) {
 		return;
 	}
 	if (new_state == state_t::asis) {
-		if (state != new_state || last_node_state != node_state) {
+		if (new_state != ex_state || last_node_state != node_state) {
 			state_started = esphome::millis();
-			state = new_state;
+			ex_state = new_state;
 			last_node_state = node_state;
 			ESP_LOGD(TAG, "state=%s", state_str());
 		}
 	} else {
-		if (new_state != state) {
+		if (new_state != ex_state) {
 			state_started = esphome::millis();
-			state = new_state;
+			ex_state = new_state;
 			ESP_LOGD(TAG, "state=%s", state_str());
 		}
 	}
@@ -142,12 +143,11 @@ SesameLock::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_
 
 void
 SesameLock::component_loop() {
-	taskManager.runLoop();
-
 	update_state();
 
-	auto elapsed = esphome::millis() - state_started;
-	switch (state) {
+	auto now = esphome::millis();
+	auto elapsed = now - state_started;
+	switch (ex_state) {
 		case state_t::registering:
 			break;
 		case state_t::connect_again:
@@ -170,9 +170,17 @@ SesameLock::component_loop() {
 			}
 			break;
 		case state_t::authenticating:
+			if (AUTH_TIMEOUT) {
+				if (elapsed > AUTH_TIMEOUT) {
+					ESP_LOGW(TAG, "Failed to authenticate to SESAME");
+					disconnect();
+					break;
+				}
+			}
 			if (sesame.get_state() == libsesame3bt::core::state_t::active) {
 				connect_tried = 0;
 				set_state(state_t::running);
+				status_clear_warning();
 			}
 			break;
 		case state_t::connected: {
@@ -202,6 +210,7 @@ SesameLock::component_loop() {
 			if (reg_status) {
 				ESP_LOGW(TAG, "Failed to subscribe notification, connect again");
 				disconnect();
+				status_set_warning();
 				break;
 			}
 			set_state(state_t::registering);
@@ -211,6 +220,13 @@ SesameLock::component_loop() {
 			if (sesame.get_state() != libsesame3bt::core::state_t::active) {
 				ESP_LOGW(TAG, "Sesame client state changed, disconnect");
 				disconnect();
+			}
+			if (HISTORY_TIMEOUT) {
+				if (last_history_requested && now - last_history_requested > HISTORY_TIMEOUT) {
+					ESP_LOGW(TAG, "History not received");
+					publish_lock_state();
+					last_history_requested = 0;
+				}
 			}
 			break;
 		case state_t::asis:
@@ -230,6 +246,8 @@ SesameLock::component_loop() {
 				case ClientState::IDLE:
 					if (once_found) {
 						sesame.on_disconnected();
+						reset();
+						update_lock_state(unknown_state_alternative);
 						set_state(state_t::connect_again);
 					} else {
 						if (discover_timeout) {
@@ -278,8 +296,7 @@ SesameLock::component_loop() {
 bool
 SesameLock::write_to_tx(const uint8_t* data, size_t size) {
 	if (tx_handle == 0) {
-		ESP_LOGE(TAG, "tx_handle not initialized");
-		mark_failed();
+		ESP_LOGW(TAG, "tx_handle not initialized yet");
 		return false;
 	}
 	ESP_LOGV(TAG, "write to %u %ub", tx_handle, size);
@@ -314,7 +331,7 @@ SesameLock::init(model_t model, const char* pubkey, const char* secret, const ch
 	}
 	sesame.set_status_callback([this](auto& client, auto status) {
 		sesame_status = status;
-		taskManager.schedule(onceMillis(0), [this]() { reflect_sesame_status(); });
+		set_timeout(0, [this]() { reflect_sesame_status(); });
 	});
 	if (handle_history()) {
 		recv_history_tag.reserve(Sesame::MAX_HISTORY_TAG_SIZE + 1);
@@ -323,7 +340,7 @@ SesameLock::init(model_t model, const char* pubkey, const char* secret, const ch
 			recv_history_tag.assign(history.tag, history.tag_len);
 			ESP_LOGD(TAG, "hist: type=%u, str=(%u)%.*s", static_cast<uint8_t>(history.type), history.tag_len, history.tag_len,
 			         history.tag);
-			taskManager.schedule(onceMillis(0), [this]() { publish_lock_history_state(); });
+			set_timeout(0, [this]() { publish_lock_history_state(); });
 		});
 	}
 }
@@ -357,7 +374,7 @@ SesameLock::reflect_sesame_status() {
 	if (!sesame_status) {
 		return;
 	}
-	lock::LockState new_lock_state;
+	LockState new_lock_state;
 	if (sesame_status->in_lock() && sesame_status->in_unlock()) {
 		// lock status not determined
 		return;
@@ -380,15 +397,31 @@ SesameLock::reflect_sesame_status() {
 }
 
 void
-SesameLock::update_lock_state(lock::LockState new_state) {
-	if (lock_state == new_state) {
+SesameLock::publish_lock_state(bool force_publish) {
+	auto st = lock_state;
+	if (st == LockState::LOCK_STATE_NONE) {
+		st = unknown_state_alternative;
+	}
+	if (state == st && force_publish) {
+		ESP_LOGD(TAG, "Force publish state = %u", static_cast<uint8_t>(lock_state));
+		state_callback_.call();
+	}
+	publish_state(st);
+}
+
+void
+SesameLock::update_lock_state(LockState new_state, bool force_publish) {
+	if (!force_publish && lock_state == new_state) {
 		return;
 	}
 	lock_state = new_state;
-	if (handle_history()) {
-		sesame.request_history();
+	if (!force_publish && lock_state != LockState::LOCK_STATE_NONE && handle_history()) {
+		if (!sesame.request_history()) {
+			ESP_LOGW(TAG, "Failed to request history");
+			publish_lock_state();
+		}
 	} else {
-		publish_state(lock_state);
+		publish_lock_state(force_publish);
 	}
 }
 
@@ -400,12 +433,12 @@ SesameLock::publish_lock_history_state() {
 	if (history_tag_sensor) {
 		history_tag_sensor->publish_state(recv_history_tag);
 	}
-	publish_state(lock_state);
+	publish_lock_state();
 }
 
 bool
 SesameLock::operable_warn() const {
-	if (state != state_t::running) {
+	if (ex_state != state_t::running) {
 		ESP_LOGW(TAG, "Not connected to SESAME yet, ignored requested action");
 		return false;
 	}
@@ -443,6 +476,7 @@ void
 SesameLock::disconnect() {
 	parent()->disconnect();
 	reset();
+	update_lock_state(LockState::LOCK_STATE_NONE, true);
 }
 
 void
@@ -453,8 +487,10 @@ SesameLock::connect() {
 
 void
 SesameLock::setup() {
+	update_lock_state(unknown_state_alternative, true);
 	reset();
 	connect_tried = 1;
+	status_set_warning();
 }
 
 void
