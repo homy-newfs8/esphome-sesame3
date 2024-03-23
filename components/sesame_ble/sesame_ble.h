@@ -1,5 +1,4 @@
 #pragma once
-
 #include "esphome/components/esp32_ble_tracker/esp32_ble_tracker.h"
 
 namespace esphome {

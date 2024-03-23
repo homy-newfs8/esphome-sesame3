@@ -121,7 +121,7 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(CONF_CONNECT_RETRY_LIMIT): cv.int_range(min=0, max=65535),
             cv.Optional(CONF_UNKNOWN_STATE_ALTERNATIVE): cv.enum(LOCK_STATES),
             cv.Optional(CONF_CONNECTION_SENSOR): binary_sensor.binary_sensor_schema(
-                device_class=DEVICE_CLASS_CONNECTIVITY, entity_category=ENTITY_CATEGORY_DIAGNOSTIC
+                device_class=DEVICE_CLASS_CONNECTIVITY,
             ),
         }
     )
