@@ -1,6 +1,6 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
-from esphome.components import lock, sensor, text_sensor, ble_client
+from esphome.components import ble_client, binary_sensor, lock, sensor, text_sensor
 from esphome.const import (
     CONF_ID,
     CONF_MODEL,
@@ -9,14 +9,27 @@ from esphome.const import (
     UNIT_PERCENT,
     UNIT_VOLT,
     DEVICE_CLASS_BATTERY,
+    DEVICE_CLASS_CONNECTIVITY,
     DEVICE_CLASS_EMPTY,
     DEVICE_CLASS_VOLTAGE,
+    ENTITY_CATEGORY_DIAGNOSTIC,
     STATE_CLASS_NONE,
     STATE_CLASS_MEASUREMENT,
 )
 import string
 
-DEPENDENCIES = ["sensor", "text_sensor", "esp32_ble"]
+DEPENDENCIES = ["sensor", "text_sensor", "binary_sensor", "esp32_ble"]
+
+lock_ns = cg.esphome_ns.namespace("lock")
+LockState_t = lock_ns.enum("LockState", False)
+LOCK_STATES = {
+    "NONE": LockState_t.LOCK_STATE_NONE,
+    "LOCKED": LockState_t.LOCK_STATE_LOCKED,
+    "UNLOCKED": LockState_t.LOCK_STATE_UNLOCKED,
+    "JAMMED": LockState_t.LOCK_STATE_JAMMED,
+    "LOCKING": LockState_t.LOCK_STATE_LOCKING,
+    "UNLOCKING": LockState_t.LOCK_STATE_UNLOCKING,
+}
 
 lock_ns = cg.esphome_ns.namespace("lock")
 LockState_t = lock_ns.enum("LockState", False)
@@ -41,6 +54,7 @@ CONF_HISTORY_TYPE = "history_type"
 CONF_DISCOVER_TIMEOUT = "discover_timeout"
 CONF_CONNECT_RETRY_LIMIT = "connect_retry_limit"
 CONF_UNKNOWN_STATE_ALTERNATIVE = "unknown_state_alternative"
+CONF_CONNECTION_SENSOR = "connection_sensor"
 
 SesameModel_t = sesame_lock_ns.enum("model_t", True)
 SESAME_MODELS = {
@@ -106,6 +120,9 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(CONF_DISCOVER_TIMEOUT): cv.positive_time_period_milliseconds,
             cv.Optional(CONF_CONNECT_RETRY_LIMIT): cv.int_range(min=0, max=65535),
             cv.Optional(CONF_UNKNOWN_STATE_ALTERNATIVE): cv.enum(LOCK_STATES),
+            cv.Optional(CONF_CONNECTION_SENSOR): binary_sensor.binary_sensor_schema(
+                device_class=DEVICE_CLASS_CONNECTIVITY, entity_category=ENTITY_CATEGORY_DIAGNOSTIC
+            ),
         }
     )
     .extend(cv.COMPONENT_SCHEMA)
@@ -125,6 +142,9 @@ async def to_code(config):
     if CONF_BATTERY_VOLTAGE in config:
         s = await sensor.new_sensor(config[CONF_BATTERY_VOLTAGE])
         cg.add(var.set_battery_voltage_sensor(s))
+    if CONF_CONNECTION_SENSOR in config:
+        s = await binary_sensor.new_binary_sensor(config[CONF_CONNECTION_SENSOR])
+        cg.add(var.set_connection_sensor(s))
     if CONF_HISTORY_TAG in config:
         s = await text_sensor.new_text_sensor(config[CONF_HISTORY_TAG])
         cg.add(var.set_history_tag_sensor(s))

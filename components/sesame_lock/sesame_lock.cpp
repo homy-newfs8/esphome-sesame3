@@ -6,9 +6,11 @@ namespace {
 constexpr uint32_t CONNECT_TIMEOUT = 10'000;
 constexpr uint32_t DISCONNECT_TIMEOUT = 2'000;
 constexpr uint32_t AUTH_TIMEOUT = 5'000;
+constexpr uint32_t REGISTER_TIMEOUT = 2'000;
 constexpr uint32_t REBOOT_DELAY = 3'000;
 constexpr uint32_t CONNECT_INTERVAL = 5'000;
 constexpr uint32_t HISTORY_TIMEOUT = 2'000;
+constexpr uint32_t JAM_DETECTION_TIMEOUT = 3'000;
 
 constexpr uint32_t
 sec(uint32_t ms) {
@@ -149,6 +151,13 @@ SesameLock::component_loop() {
 	auto elapsed = now - state_started;
 	switch (ex_state) {
 		case state_t::registering:
+			if (REGISTER_TIMEOUT) {
+				if (elapsed > REGISTER_TIMEOUT) {
+					ESP_LOGW(TAG, "Failed to register notify to SESAME");
+					disconnect();
+					break;
+				}
+			}
 			break;
 		case state_t::connect_again:
 			if (connect_limit) {
@@ -181,6 +190,7 @@ SesameLock::component_loop() {
 				connect_tried = 0;
 				set_state(state_t::running);
 				status_clear_warning();
+				publish_connection_state(true);
 			}
 			break;
 		case state_t::connected: {
@@ -228,6 +238,13 @@ SesameLock::component_loop() {
 					last_history_requested = 0;
 				}
 			}
+			if (JAM_DETECTION_TIMEOUT) {
+				if (jam_detect_started && now - jam_detect_started > JAM_DETECTION_TIMEOUT) {
+					ESP_LOGW(TAG, "Locking state not determined too long, treat as jammed");
+					update_lock_state(LockState::LOCK_STATE_JAMMED);
+					jam_detect_started = 0;
+				}
+			}
 			break;
 		case state_t::asis:
 			switch (node_state) {
@@ -247,7 +264,8 @@ SesameLock::component_loop() {
 					if (once_found) {
 						sesame.on_disconnected();
 						reset();
-						update_lock_state(unknown_state_alternative);
+						update_lock_state(LockState::LOCK_STATE_NONE);
+						publish_connection_state(false);
 						set_state(state_t::connect_again);
 					} else {
 						if (discover_timeout) {
@@ -377,6 +395,9 @@ SesameLock::reflect_sesame_status() {
 	LockState new_lock_state;
 	if (sesame_status->in_lock() && sesame_status->in_unlock()) {
 		// lock status not determined
+		if (!jam_detect_started && lock_state != LockState::LOCK_STATE_JAMMED) {
+			jam_detect_started = esphome::millis();
+		}
 		return;
 	}
 	if (sesame_status->in_unlock()) {
@@ -385,6 +406,9 @@ SesameLock::reflect_sesame_status() {
 		new_lock_state = lock::LOCK_STATE_LOCKED;
 	} else {
 		// lock status not determined
+		if (!jam_detect_started && lock_state != LockState::LOCK_STATE_JAMMED) {
+			jam_detect_started = esphome::millis();
+		}
 		return;
 	}
 	update_lock_state(new_lock_state);
@@ -407,6 +431,13 @@ SesameLock::publish_lock_state(bool force_publish) {
 		state_callback_.call();
 	}
 	publish_state(st);
+}
+
+void
+SesameLock::publish_connection_state(bool connected) {
+	if (connection_sensor) {
+		connection_sensor->publish_state(connected);
+	}
 }
 
 void
@@ -477,6 +508,7 @@ SesameLock::disconnect() {
 	parent()->disconnect();
 	reset();
 	update_lock_state(LockState::LOCK_STATE_NONE, true);
+	publish_connection_state(false);
 }
 
 void
@@ -487,7 +519,8 @@ SesameLock::connect() {
 
 void
 SesameLock::setup() {
-	update_lock_state(unknown_state_alternative, true);
+	update_lock_state(LockState::LOCK_STATE_NONE, true);
+	publish_connection_state(false);
 	reset();
 	connect_tried = 1;
 	status_set_warning();

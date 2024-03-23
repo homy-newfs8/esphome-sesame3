@@ -1,5 +1,6 @@
 #pragma once
 
+#include <esphome/components/binary_sensor/binary_sensor.h>
 #include <esphome/components/ble_client/ble_client.h>
 #include <esphome/components/lock/lock.h>
 #include <esphome/components/sensor/sensor.h>
@@ -45,6 +46,7 @@ class SesameLock : public lock::Lock,
 	void set_battery_voltage_sensor(sensor::Sensor* sensor) { voltage_sensor = sensor; }
 	void set_history_tag_sensor(text_sensor::TextSensor* sensor) { history_tag_sensor = sensor; }
 	void set_history_type_sensor(sensor::Sensor* sensor) { history_type_sensor = sensor; }
+	void set_connection_sensor(binary_sensor::BinarySensor* sensor) { connection_sensor = sensor; }
 
 	void set_connect_retry_limit(uint16_t retry_limit) { connect_limit = retry_limit; }
 	void set_discover_timeout(uint32_t timeout) { discover_timeout = timeout; }
@@ -63,12 +65,14 @@ class SesameLock : public lock::Lock,
 	sensor::Sensor* voltage_sensor = nullptr;
 	text_sensor::TextSensor* history_tag_sensor = nullptr;
 	sensor::Sensor* history_type_sensor = nullptr;
+	binary_sensor::BinarySensor* connection_sensor = nullptr;
 	lock::LockState lock_state = lock::LockState::LOCK_STATE_NONE;
 	lock::LockState unknown_state_alternative = lock::LockState::LOCK_STATE_NONE;
 
 	uint32_t state_started = 0;
 	uint32_t last_history_requested = 0;
 	uint32_t last_notified = 0;
+	uint32_t jam_detect_started = 0;
 	state_t ex_state = state_t::asis;
 	uint32_t discover_timeout = 0;
 	uint16_t connect_limit = 0;
@@ -88,6 +92,7 @@ class SesameLock : public lock::Lock,
 	bool operable_warn() const;
 	void publish_lock_history_state();
 	void publish_lock_state(bool force_publish = false);
+	void publish_connection_state(bool connected);
 	bool handle_history() const { return history_tag_sensor || history_type_sensor; }
 	void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t* param) override;
 	void reset();
