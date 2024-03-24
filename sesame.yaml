@@ -2,27 +2,26 @@ esphome:
   name: entrance
   friendly_name: Entrance
   libraries:
-    # - https://github.com/homy-newfs8/libsesame3bt-core#v0.1.1
-    - symlink://../../../../../../PlatformIO/Projects/libsesame3bt-core
-    # - symlink://../../../../../../PlatformIO/Projects/libsesame3bt
-    - davetcc/TaskManagerIO @ ^1.4.0
+    - https://github.com/homy-newfs8/libsesame3bt-core#v0.3.0
+    # - symlink://../../../../../../PlatformIO/Projects/libsesame3bt-core
   platformio_options:
     build_flags:
       - -std=gnu++17 -Wall -Wextra
-      - -DMBEDTLS_DEPRECATED_REMOVED -DCONFIG_BT_NIMBLE_ROLE_BROADCASTER_DISABLED -DCONFIG_BT_NIMBLE_ROLE_PERIPHERAL_DISABLED
-      - -DTM_ENABLE_CAPTURED_LAMBDAS
-      - -DLIBSESAME3BTCORE_DEBUG=1
-# Configure the maximum number of connections as required
-      - -DCONFIG_BT_NIMBLE_MAX_CONNECTIONS=4
+      # To using ESP-IDF uncomment below
+      # - -DUSE_FRAMEWORK_MBEDTLS_CMAC
     build_unflags:
       - -std=gnu++11
 external_components:
   # - source:
   #     type: git
   #     url: https://github.com/homy-newfs8/esphome-sesame3
-  #     ref: v0.8.0
+  #     ref: v0.9.0
   #   components: [ sesame_lock, sesame_ble ]
   - source: 'components'
+
+# If you want to know your SESAME MAC Address, uncomment below two lines.
+#esp32_ble_tracker:
+#sesame_ble:
 
 esp32:
   board: seeed_xiao_esp32c3
@@ -32,7 +31,7 @@ esp32:
   framework:
     type: arduino
     version: latest
-    platform_version: 6.3.2
+    platform_version: 6.5.0
 
 # Enable logging
 logger:
@@ -50,9 +49,9 @@ api:
   #     then:
   #       lambda: |-
   #         if (is_lock) {
-  #           id(lock_1).lock(tag.c_str());
+  #           id(lock_1).lock(tag);
   #         } else {
-  #           id(lock_1).unlock(tag.c_str());
+  #           id(lock_1).unlock(tag);
   #         }
 
 ota:
@@ -69,72 +68,81 @@ wifi:
 
 captive_portal:
 
-ble_client:
-  mac_address: !secret sesame3_address
-  id: ble_sesame3
-
-# Declare sensor (empty is sufficient) to expose the battery value of the SESAME lock.
+# Please declare the following sensors even if you do not use them.
 sensor:
-
-# Declare text_sensor (empty is sufficient) to expose the history tag value of the SESAME lock.
 text_sensor:
+binary_sensor:
 
 # Supported devices examples
 # Choose one or more you want to use
-# If you need many BLE connections, modify CONFIG_BT_NIMBLE_MAX_CONNECTIONS setting above
+
+# Declare ble_client with SESAME MAC Address and it's own ID
+ble_client:
+  - mac_address: !secret sesame5_address
+    id: ble_device_1
+  # - mac_address: !secret sesame3_address
+  #   id: ble_device_2
+  # - mac_address: !secret sesamebot_address
+  #   id: ble_device_3
+  # - mac_address: !secret sesamebike_address
+  #   id: ble_device_4
+
 lock:
-  # - platform: sesame_lock
-  #   name: Lock1
-  #   id: lock_1
-  #   # model: Requried: sesame_5 / sesame_5_pro / sesame_3 / sesame_4 / sesame_bot / sesame_bike
-  #   model: sesame_5
-  #   # tag: You can specify SESAME tag (shown in history) value (default: "ESPHome").
-  #   # If you want to specify tag action-by-action, use lambda like:
-  #   #   lambda: id(lock_1).lock("More specific value")
-  #   # See example above api: services: section.
-  #   tag: "My awesome system"
-  #   # public_key: Required for sesame_3 / sesame_4 / sesame_bot / sesame_bike
-  #   # for sesame_5 / sesame_5_pro comment out public_key line or specify any string (will be ignored)
-  #   public_key: ""
-  #   secret: !secret sesame5_secret
-  #   address: !secret sesame5_address
-  #   # expose battery remaining percentage with specified name
-  #   battery_pct:
-  #     name: "Lock1_battery_level"
-  #   # expose battery voltage with specified name
-  #   battery_voltage:
-  #     name: "Lock1_battery_voltage"
-  #   # expose operation history tag text
-  #   history_tag:
-  #     name: "Lock1_history_tag"
-  #   # expose operation history type
-  #   history_type:
-  #     name: "Lock1_history_type"
+  - platform: sesame_lock
+    # Relate with ble_client by ID
+    ble_client_id: ble_device_1
+    name: Lock1
+    id: lock_1
+    # model: Requried: sesame_5 / sesame_5_pro / sesame_3 / sesame_4 / sesame_bot / sesame_bike
+    model: sesame_5
+    # tag: You can specify SESAME tag (shown in history) value (default: "ESPHome").
+    # If you want to specify tag action-by-action, use lambda like:
+    #   lambda: id(lock_1).lock("More specific value")
+    # See example above api: services: section.
+    tag: "My awesome system"
+    # public_key: Required for sesame_3 / sesame_4 / sesame_bot / sesame_bike
+    # for sesame_5 / sesame_5_pro comment out public_key line or specify any string (will be ignored)
+    public_key: ""
+    secret: !secret sesame5_secret
+    # expose battery remaining percentage with specified name
+    battery_pct:
+      name: "Lock1_battery_level"
+    # expose battery voltage with specified name
+    battery_voltage:
+      name: "Lock1_battery_voltage"
+    # expose operation history tag text
+    history_tag:
+      name: "Lock1_history_tag"
+    # expose operation history type
+    history_type:
+      name: "Lock1_history_type"
+    # expose connection state
+    connection_sensor:
+      name: "Lock1_connection"
 
   # You can specify and control multiple SESAME devices with one ESP32.
   # This module reboots if one of specified devices unable to connect for a certain period of time.
   # Be careful not to specify a mix of stable and unstable devices.
-
-  - platform: sesame_lock
-    ble_client_id: ble_sesame3
-    name: Lock2
-    id: lock_2
-    model: sesame_3
-    public_key: !secret sesame3_pubkey
-    secret: !secret sesame3_secret
-#    address: !secret sesame3_address
+  # - platform: sesame_lock
+  #   ble_client_id: ble_device_2
+  #   name: Lock2
+  #   id: lock_2
+  #   model: sesame_3
+  #   public_key: !secret sesame3_pubkey
+  #   secret: !secret sesame3_secret
 
   # - platform: sesame_lock
+  #   ble_client_id: ble_device_3
   #   name: Bot1
   #   id: bot_1
   #   model: sesame_bot
   #   public_key: !secret sesamebot_pubkey
   #   secret: !secret sesamebot_secret
-  #   address: !secret sesamebot_address
+
   # - platform: sesame_lock
+  #   ble_client_id: ble_device_4
   #   name: Bike1
   #   id: bike_1
   #   model: sesame_bike
   #   public_key: !secret sesamebike_pubkey
   #   secret: !secret sesamebike_secret
-  #   address: !secret sesamebike_address
