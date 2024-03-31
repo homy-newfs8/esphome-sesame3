@@ -99,7 +99,7 @@ SesameLock::publish_lock_state(bool force_publish) {
 void
 SesameLock::setup() {
 	ESP_LOGD(TAG, "setup");
-	update_lock_state(LockState::LOCK_STATE_NONE, true);
+	publish_lock_state(true);
 }
 
 void
@@ -129,6 +129,7 @@ SesameLock::open(const char* tag) {
 void
 SesameLock::reflect_sesame_status() {
 	if (!sesame_status) {
+		update_lock_state(LockState::LOCK_STATE_NONE);
 		return;
 	}
 	lock::LockState new_lock_state;
@@ -209,8 +210,8 @@ SesameLock::operable_warn() const {
 void
 SesameLock::disconnect() {
 	sesame.disconnect();
+	sesame_status.reset();
 	set_state(state_t::not_connected);
-	update_lock_state(LockState::LOCK_STATE_NONE);
 	publish_connection_state(false);
 	ESP_LOGI(TAG, "Disconnected");
 }
@@ -246,6 +247,15 @@ void
 SesameLock::loop() {
 	taskManager.runLoop();
 	auto now = esphome::millis();
+	if (sesame_status.has_value()) {
+		unknown_state_started = 0;
+	} else {
+		if (unknown_state_started == 0) {
+			unknown_state_started = now;
+		} else if (unknown_state_timeout_sec && now - unknown_state_started > unknown_state_timeout_sec * 1000) {
+			reflect_sesame_status();
+		}
+	}
 	switch (my_state) {
 		case state_t::not_connected:
 			publish_connection_state(false);

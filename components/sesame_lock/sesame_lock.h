@@ -42,6 +42,7 @@ class SesameLock : public lock::Lock, public Component {
 	uint32_t state_started = 0;
 	uint32_t jam_detection_started = 0;
 	uint32_t last_history_requested = 0;
+	uint32_t unknown_state_started = 0;
 	std::string log_tag_string;
 	libsesame3bt::Sesame::history_type_t recv_history_type;
 	std::string recv_history_tag;
@@ -58,7 +59,8 @@ class SesameLock : public lock::Lock, public Component {
 	state_t my_state = state_t::not_connected;
 	uint16_t connect_limit = 0;
 	uint16_t connect_tried = 0;
-	uint8_t connection_timeout_sec = 10;
+	uint8_t connection_timeout_sec = 5;
+	uint8_t unknown_state_timeout_sec = 15;
 
 	static bool initialized;
 

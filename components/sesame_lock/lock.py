@@ -45,6 +45,7 @@ CONF_HISTORY_TYPE = "history_type"
 CONF_CONNECT_RETRY_LIMIT = "connect_retry_limit"
 CONF_UNKNOWN_STATE_ALTERNATIVE = "unknown_state_alternative"
 CONF_CONNECTION_SENSOR = "connection_sensor"
+CONF_UNKNOWN_STATE_TIMEOUT = "unknown_state_timeout"
 
 SesameModel_t = cg.global_ns.enum("libsesame3bt::Sesame::model_t", True)
 SESAME_MODELS = {
@@ -113,7 +114,8 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(CONF_CONNECTION_SENSOR): binary_sensor.binary_sensor_schema(
                 device_class=DEVICE_CLASS_CONNECTIVITY,
             ),
-            cv.Optional(CONF_TIMEOUT, default="10s"): cv.All(cv.positive_time_period_seconds, cv.Range(max=cv.TimePeriod(seconds=255))),
+            cv.Optional(CONF_TIMEOUT, default="5s"): cv.All(cv.positive_time_period_seconds, cv.Range(max=cv.TimePeriod(seconds=255))),
+            cv.Optional(CONF_UNKNOWN_STATE_TIMEOUT, default="15s"): cv.All(cv.positive_time_period_seconds, cv.Range(max=cv.TimePeriod(seconds=255))),
         }
     ).extend(cv.COMPONENT_SCHEMA),
     validate_pubkey,
@@ -145,6 +147,8 @@ async def to_code(config):
         cg.add(var.set_unknown_state_alternative(config[CONF_UNKNOWN_STATE_ALTERNATIVE]))
     if CONF_TIMEOUT in config:
         cg.add(var.set_connection_timeout_sec(config[CONF_TIMEOUT].total_seconds))
+    if CONF_UNKNOWN_STATE_TIMEOUT in config:
+        cg.add(var.set_connection_timeout_sec(config[CONF_UNKNOWN_STATE_TIMEOUT].total_seconds))
     cg.add(
         var.init(
             config[CONF_MODEL],
