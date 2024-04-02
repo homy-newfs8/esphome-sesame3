@@ -1,6 +1,5 @@
 #include "sesame_lock.h"
 #include <Arduino.h>
-#include <TaskManagerIO.h>
 #include <esphome/core/application.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
@@ -68,7 +67,7 @@ SesameLock::init(model_t model, const char* pubkey, const char* secret, const ch
 	sesame.set_state_callback([this](auto& client, auto state) { sesame_state = state; });
 	sesame.set_status_callback([this](auto& client, auto status) {
 		sesame_status = status;
-		taskManager.schedule(onceMillis(0), [this]() { reflect_sesame_status(); });
+		set_timeout(0, [this]() { reflect_sesame_status(); });
 	});
 	if (handle_history()) {
 		recv_history_tag.reserve(SesameClient::MAX_CMD_TAG_SIZE + 1);
@@ -77,7 +76,7 @@ SesameLock::init(model_t model, const char* pubkey, const char* secret, const ch
 			recv_history_tag.assign(history.tag, history.tag_len);
 			ESP_LOGD(TAG, "hist: type=%u, str=(%u)%.*s", static_cast<uint8_t>(history.type), history.tag_len, history.tag_len,
 			         history.tag);
-			taskManager.schedule(onceMillis(0), [this]() { publish_lock_history_state(); });
+			set_timeout(0, [this]() { publish_lock_history_state(); });
 		});
 	}
 	set_state(state_t::not_connected);
@@ -245,7 +244,6 @@ SesameLock::open_latch() {
 
 void
 SesameLock::loop() {
-	taskManager.runLoop();
 	auto now = esphome::millis();
 	if (sesame_status.has_value()) {
 		unknown_state_started = 0;
