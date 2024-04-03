@@ -102,7 +102,7 @@ SesameLock::setup() {
 }
 
 void
-SesameLock::lock(const char* tag) {
+SesameLock::lock(std::string_view tag) {
 	if (!operable_warn()) {
 		return;
 	}
@@ -110,7 +110,7 @@ SesameLock::lock(const char* tag) {
 }
 
 void
-SesameLock::unlock(const char* tag) {
+SesameLock::unlock(std::string_view tag) {
 	if (!operable_warn()) {
 		return;
 	}
@@ -118,7 +118,7 @@ SesameLock::unlock(const char* tag) {
 }
 
 void
-SesameLock::open(const char* tag) {
+SesameLock::open(std::string_view tag) {
 	if (!operable_warn()) {
 		return;
 	}

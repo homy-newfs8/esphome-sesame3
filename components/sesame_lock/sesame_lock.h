@@ -9,6 +9,7 @@
 #include <atomic>
 #include <mutex>
 #include <optional>
+#include <string_view>
 
 namespace esphome {
 namespace sesame_lock {
@@ -22,9 +23,9 @@ class SesameLock : public lock::Lock, public Component {
 	using lock::Lock::lock;
 	using lock::Lock::open;
 	using lock::Lock::unlock;
-	void lock(const char* tag);
-	void unlock(const char* tag);
-	void open(const char* tag);
+	void lock(std::string_view tag);
+	void unlock(std::string_view tag);
+	void open(std::string_view tag);
 	void set_battery_pct_sensor(sensor::Sensor* sensor) { pct_sensor = sensor; }
 	void set_battery_voltage_sensor(sensor::Sensor* sensor) { voltage_sensor = sensor; }
 	void set_history_tag_sensor(text_sensor::TextSensor* sensor) { history_tag_sensor = sensor; }
@@ -59,8 +60,8 @@ class SesameLock : public lock::Lock, public Component {
 	state_t my_state = state_t::not_connected;
 	uint16_t connect_limit = 0;
 	uint16_t connect_tried = 0;
-	uint8_t connection_timeout_sec = 5;
-	uint8_t unknown_state_timeout_sec = 15;
+	uint8_t connection_timeout_sec = 10;
+	uint8_t unknown_state_timeout_sec = 20;
 
 	static bool initialized;
 
