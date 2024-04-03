@@ -1,5 +1,16 @@
 # Changelog
 
+## [v0.9.0] 2024-04-04
+
+- Update libsesame3bt library to 0.16.0
+- Added some options (see README)
+	- timeout
+	- connection_sensor
+	- unknown_state_alternative
+	- unknown_state_timeout
+	- connect_retry_limit
+- action `lock`, `unlock`, `open` can accept `string` directory (no need to `c_str()`).
+
 ## [v0.8.0] 2024-03-03
 
 - Start BLE connection according to `setup_priority` (was start connecton too early).
