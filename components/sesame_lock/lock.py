@@ -114,8 +114,8 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(CONF_CONNECTION_SENSOR): binary_sensor.binary_sensor_schema(
                 device_class=DEVICE_CLASS_CONNECTIVITY,
             ),
-            cv.Optional(CONF_TIMEOUT, default="5s"): cv.All(cv.positive_time_period_seconds, cv.Range(max=cv.TimePeriod(seconds=255))),
-            cv.Optional(CONF_UNKNOWN_STATE_TIMEOUT, default="15s"): cv.All(cv.positive_time_period_seconds, cv.Range(max=cv.TimePeriod(seconds=255))),
+            cv.Optional(CONF_TIMEOUT, default="10s"): cv.All(cv.positive_time_period_seconds, cv.Range(max=cv.TimePeriod(seconds=255))),
+            cv.Optional(CONF_UNKNOWN_STATE_TIMEOUT, default="20s"): cv.All(cv.positive_time_period_seconds, cv.Range(max=cv.TimePeriod(seconds=255))),
         }
     ).extend(cv.COMPONENT_SCHEMA),
     validate_pubkey,
