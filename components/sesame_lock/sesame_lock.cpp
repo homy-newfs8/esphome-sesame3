@@ -297,7 +297,9 @@ SesameLock::loop() {
 			if (HISTORY_TIMEOUT) {
 				if (last_history_requested && now - last_history_requested > HISTORY_TIMEOUT) {
 					ESP_LOGW(TAG, "History not received");
-					publish_lock_state();
+					recv_history_type = Sesame::history_type_t::none;
+					recv_history_tag.clear();
+					publish_lock_history_state();
 					last_history_requested = 0;
 				}
 			}
