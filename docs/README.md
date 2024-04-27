@@ -36,11 +36,6 @@ external_components:
       url: https://github.com/homy-newfs8/esphome-sesame3
       ref: v0.9.0
     components: [ sesame_lock, sesame_ble ]
-
-# need (at least empty) these blocks.
-sensor:
-text_sensor:
-binary_sensor:
 ```
 
 Select the ESP32 board you want to use. Arduino framework is required.
@@ -108,10 +103,11 @@ If you don't want it to be treated as "Unlocked", you can send the unknown state
 You can identify your SESAME address by using ESPHome BLE tracker with `sesame_ble` component. First, remove `lock:` component definition and add below to your configuration:
 
 ```yaml
-esp32_ble_tracker:
+logger:
 
 sesame_ble:
 ```
+(`logger` must be specified for logging output)
 
 Upload and start ESP32, logging message contains discovered SESAME devices information:
 

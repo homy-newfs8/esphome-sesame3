@@ -19,8 +19,10 @@ from esphome.const import (
 )
 import string
 
+AUTO_LOAD = ["sensor", "text_sensor", "binary_sensor", "lock"]
 DEPENDENCIES = ["sensor", "text_sensor", "binary_sensor"]
 CONFLICTS_WITH = ["esp32_ble"]
+MULTI_CONF = True
 
 lock_ns = cg.esphome_ns.namespace("lock")
 LockState_t = lock_ns.enum("LockState", False)
@@ -34,7 +36,8 @@ LOCK_STATES = {
 }
 
 sesame_lock_ns = cg.esphome_ns.namespace("sesame_lock")
-SesameLock = sesame_lock_ns.class_("SesameLock", lock.Lock, cg.Component)
+SesameComponent = sesame_lock_ns.class_("SesameComponent", cg.PollingComponent)
+SesameLock = sesame_lock_ns.class_("SesameLock", lock.Lock)
 
 CONF_PUBLIC_KEY = "public_key"
 CONF_SECRET = "secret"
@@ -46,6 +49,7 @@ CONF_CONNECT_RETRY_LIMIT = "connect_retry_limit"
 CONF_UNKNOWN_STATE_ALTERNATIVE = "unknown_state_alternative"
 CONF_CONNECTION_SENSOR = "connection_sensor"
 CONF_UNKNOWN_STATE_TIMEOUT = "unknown_state_timeout"
+CONF_LOCK = "lock"
 
 SesameModel_t = cg.global_ns.enum("libsesame3bt::Sesame::model_t", True)
 SESAME_MODELS = {
@@ -55,8 +59,20 @@ SESAME_MODELS = {
     "sesame_cycle": SesameModel_t.sesame_bike,
     "sesame_4": SesameModel_t.sesame_4,
     "sesame_5": SesameModel_t.sesame_5,
+    "sesame_bike_2": SesameModel_t.sesame_bike_2,
     "sesame_5_pro": SesameModel_t.sesame_5_pro,
+    "open_sensor": SesameModel_t.open_sensor_1,
+    "sesame_touch_pro": SesameModel_t.sesame_touch_pro,
+    "sesame_touch": SesameModel_t.sesame_touch,
 }
+
+
+def is_os3_model(model):
+    return model not in ("sesame_3", "sesame_bot", "sesame_bike", "sesame_cycle", "sesame_4")
+
+
+def is_lockable_model(model):
+    return model not in ("open_sensor", "sesame_touch_pro", "sesame_touch")
 
 
 def is_hex_string(str, valid_len):
@@ -74,22 +90,45 @@ def valid_hexstring(key, valid_len):
 
 
 def validate_pubkey(config):
-    if config[CONF_MODEL] not in ("sesame_5", "sesame_5_pro"):
+    if not is_os3_model(config[CONF_MODEL]):
         if not config[CONF_PUBLIC_KEY]:
             raise cv.RequiredFieldInvalid("'public_key' is required for SESAME 3 / SESAME 4 / SESAME bot / SESAME Bike")
         valid_hexstring(CONF_PUBLIC_KEY, 128)(config[CONF_PUBLIC_KEY])
     return config
 
 
+def validate_lockable(config):
+    if not is_lockable_model(config[CONF_MODEL]):
+        if CONF_LOCK in config:
+            raise cv.Invalid(f"Cannot define 'lock' for {config[CONF_MODEL]}")
+    return config
+
+
 CONFIG_SCHEMA = cv.All(
-    lock.LOCK_SCHEMA.extend(
+    cv.Schema(
         {
-            cv.GenerateID(): cv.declare_id(SesameLock),
+            cv.GenerateID(): cv.declare_id(SesameComponent),
             cv.Required(CONF_MODEL): cv.enum(SESAME_MODELS),
             cv.Optional(CONF_PUBLIC_KEY, default=""): cv.string,
             cv.Required(CONF_SECRET): valid_hexstring(CONF_SECRET, 32),
             cv.Required(CONF_ADDRESS): cv.mac_address,
-            cv.Optional(CONF_TAG, default="ESPHome"): cv.string,
+            cv.Optional(CONF_LOCK): lock.LOCK_SCHEMA.extend(
+                {
+                    cv.GenerateID(): cv.declare_id(SesameLock),
+                    cv.Optional(CONF_TAG, default="ESPHome"): cv.string,
+                    cv.Optional(CONF_HISTORY_TAG): text_sensor.text_sensor_schema(),
+                    cv.Optional(CONF_HISTORY_TYPE): sensor.sensor_schema(
+                        unit_of_measurement=UNIT_EMPTY,
+                        device_class=DEVICE_CLASS_EMPTY,
+                        state_class=STATE_CLASS_NONE,
+                        accuracy_decimals=0,
+                    ),
+                    cv.Optional(CONF_UNKNOWN_STATE_ALTERNATIVE): cv.enum(LOCK_STATES),
+                    cv.Optional(CONF_UNKNOWN_STATE_TIMEOUT, default="20s"): cv.All(
+                        cv.positive_time_period_seconds, cv.Range(max=cv.TimePeriod(seconds=255))
+                    ),
+                }
+            ),
             cv.Optional(CONF_BATTERY_PCT): sensor.sensor_schema(
                 unit_of_measurement=UNIT_PERCENT,
                 device_class=DEVICE_CLASS_BATTERY,
@@ -102,30 +141,21 @@ CONFIG_SCHEMA = cv.All(
                 state_class=STATE_CLASS_MEASUREMENT,
                 accuracy_decimals=1,
             ),
-            cv.Optional(CONF_HISTORY_TAG): text_sensor.text_sensor_schema(),
-            cv.Optional(CONF_HISTORY_TYPE): sensor.sensor_schema(
-                unit_of_measurement=UNIT_EMPTY,
-                device_class=DEVICE_CLASS_EMPTY,
-                state_class=STATE_CLASS_NONE,
-                accuracy_decimals=0,
-            ),
             cv.Optional(CONF_CONNECT_RETRY_LIMIT): cv.int_range(min=0, max=65535),
-            cv.Optional(CONF_UNKNOWN_STATE_ALTERNATIVE): cv.enum(LOCK_STATES),
             cv.Optional(CONF_CONNECTION_SENSOR): binary_sensor.binary_sensor_schema(
                 device_class=DEVICE_CLASS_CONNECTIVITY,
             ),
             cv.Optional(CONF_TIMEOUT, default="10s"): cv.All(cv.positive_time_period_seconds, cv.Range(max=cv.TimePeriod(seconds=255))),
-            cv.Optional(CONF_UNKNOWN_STATE_TIMEOUT, default="20s"): cv.All(cv.positive_time_period_seconds, cv.Range(max=cv.TimePeriod(seconds=255))),
         }
-    ).extend(cv.COMPONENT_SCHEMA),
+    ).extend(cv.polling_component_schema("never")),
     validate_pubkey,
+    validate_lockable,
 )
 
 
 async def to_code(config):
-    var = cg.new_Pvariable(config[CONF_ID])
+    var = cg.new_Pvariable(config[CONF_ID], str(config[CONF_ID]))
     await cg.register_component(var, config)
-    await lock.register_lock(var, config)
     if CONF_BATTERY_PCT in config:
         s = await sensor.new_sensor(config[CONF_BATTERY_PCT])
         cg.add(var.set_battery_pct_sensor(s))
@@ -135,26 +165,24 @@ async def to_code(config):
     if CONF_CONNECTION_SENSOR in config:
         s = await binary_sensor.new_binary_sensor(config[CONF_CONNECTION_SENSOR])
         cg.add(var.set_connection_sensor(s))
-    if CONF_HISTORY_TAG in config:
-        s = await text_sensor.new_text_sensor(config[CONF_HISTORY_TAG])
-        cg.add(var.set_history_tag_sensor(s))
-    if CONF_HISTORY_TYPE in config:
-        s = await sensor.new_sensor(config[CONF_HISTORY_TYPE])
-        cg.add(var.set_history_type_sensor(s))
     if CONF_CONNECT_RETRY_LIMIT in config:
         cg.add(var.set_connect_retry_limit(config[CONF_CONNECT_RETRY_LIMIT]))
-    if CONF_UNKNOWN_STATE_ALTERNATIVE in config:
-        cg.add(var.set_unknown_state_alternative(config[CONF_UNKNOWN_STATE_ALTERNATIVE]))
     if CONF_TIMEOUT in config:
         cg.add(var.set_connection_timeout_sec(config[CONF_TIMEOUT].total_seconds))
-    if CONF_UNKNOWN_STATE_TIMEOUT in config:
-        cg.add(var.set_connection_timeout_sec(config[CONF_UNKNOWN_STATE_TIMEOUT].total_seconds))
-    cg.add(
-        var.init(
-            config[CONF_MODEL],
-            config.get(CONF_PUBLIC_KEY),
-            config[CONF_SECRET],
-            str(config[CONF_ADDRESS]),
-            config[CONF_TAG],
-        )
-    )
+    if CONF_LOCK in config:
+        lconfig = config[CONF_LOCK]
+        lck = cg.new_Pvariable(lconfig[CONF_ID], var, config[CONF_MODEL], lconfig[CONF_TAG])
+        await lock.register_lock(lck, config[CONF_LOCK])
+        if CONF_HISTORY_TAG in lconfig:
+            s = await text_sensor.new_text_sensor(lconfig[CONF_HISTORY_TAG])
+            cg.add(lck.set_history_tag_sensor(s))
+        if CONF_HISTORY_TYPE in lconfig:
+            s = await sensor.new_sensor(lconfig[CONF_HISTORY_TYPE])
+            cg.add(lck.set_history_type_sensor(s))
+        if CONF_UNKNOWN_STATE_ALTERNATIVE in lconfig:
+            cg.add(lck.set_unknown_state_alternative(lconfig[CONF_UNKNOWN_STATE_ALTERNATIVE]))
+        if CONF_UNKNOWN_STATE_TIMEOUT in lconfig:
+            cg.add(lck.set_unknown_state_timeout_sec(lconfig[CONF_UNKNOWN_STATE_TIMEOUT].total_seconds))
+        cg.add(var.set_lock(lck))
+        cg.add(lck.init())
+    cg.add(var.init(config[CONF_MODEL], config.get(CONF_PUBLIC_KEY), config[CONF_SECRET], str(config[CONF_ADDRESS])))
