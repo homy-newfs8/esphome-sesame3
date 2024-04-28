@@ -2,7 +2,7 @@ esphome:
   name: entrance
   friendly_name: Entrance
   libraries:
-    - https://github.com/homy-newfs8/libsesame3bt#0.16.0
+    - https://github.com/homy-newfs8/libsesame3bt#0.17.0
     # - symlink://../../../../../../PlatformIO/Projects/libsesame3bt
   platformio_options:
     build_flags:
@@ -14,12 +14,12 @@ esphome:
       - -std=gnu++11
     lib_ldf_mode: 'deep'
 external_components:
-  - source:
-      type: git
-      url: https://github.com/homy-newfs8/esphome-sesame3
-      ref: v0.9.0
-    components: [ sesame_lock, sesame_ble ]
-  # - source: 'components'
+  # - source:
+  #     type: git
+  #     url: https://github.com/homy-newfs8/esphome-sesame3
+  #     ref: v0.10.0
+  #   components: [ sesame, sesame_ble ]
+  - source: 'components'
 
 esp32:
   board: esp32-c3-devkitm-1
@@ -35,17 +35,17 @@ api:
   ## Example service to lock/unlock with various history tags specified in Home Assistant.
   ## In Home Assistant, this service will be seen as `esphome.entrance_sesame_with_tag`
   services:
-    - service: sesame_with_tag
-      variables:
-        is_lock: bool
-        tag: string
-      then:
-        lambda: |-
-          if (is_lock) {
-            id(lock_1).lock(tag);
-          } else {
-            id(lock_1).unlock(tag);
-          }
+  - service: sesame_with_tag
+    variables:
+      is_lock: bool
+      tag: string
+    then:
+      lambda: |-
+        if (is_lock) {
+          id(lock_1).lock(tag);
+        } else {
+          id(lock_1).unlock(tag);
+        }
 
 # ota:
 #   password: ""
@@ -61,57 +61,53 @@ wifi:
 
 captive_portal:
 
-## Please declare the following sensors even if you do not use them.
-sensor:
-text_sensor:
-binary_sensor:
-
 ## Supported devices examples
 ## Choose one or more you want to use
 ## If you need more than four BLE connections, modify CONFIG_BT_NIMBLE_MAX_CONNECTIONS setting in esphome: section
-lock:
-  - platform: sesame_lock
+sesame:
+- id: sesame1
+  ## model: Requried: sesame_5 / sesame_5_pro / sesame_touch / sesame_touch_pro / open_sensor / sesame_bike_2 / sesame_4 / sesame_3 / sesame_bot / sesame_bike
+  model: sesame_5
+  ## public_key: Required for sesame_3 / sesame_4 / sesame_bot / sesame_bike
+  ## for sesame_5 / sesame_5_pro comment out public_key line or specify any string (will be ignored)
+  public_key: ""
+  secret: !secret sesame5_secret
+  address: !secret sesame5_address
+  lock:
     name: Lock1
     id: lock_1
-    ## model: Requried: sesame_5 / sesame_5_pro / sesame_3 / sesame_4 / sesame_bot / sesame_bike
-    model: sesame_5
     ## tag: You can specify SESAME tag (shown in history) value (default: "ESPHome").
     ## If you want to specify tag action-by-action, use lambda like:
     ##   lambda: id(lock_1).lock("More specific value")
     ## See example above api: services: section.
     tag: "My awesome system"
-    ## public_key: Required for sesame_3 / sesame_4 / sesame_bot / sesame_bike
-    ## for sesame_5 / sesame_5_pro comment out public_key line or specify any string (will be ignored)
-    public_key: ""
-    secret: !secret sesame5_secret
-    address: !secret sesame5_address
-    ## expose battery remaining percentage with specified name
-    battery_pct:
-      name: "Lock1_battery_level"
-    ## expose battery voltage with specified name
-    battery_voltage:
-      name: "Lock1_battery_voltage"
     ## expose operation history tag text
     history_tag:
       name: "Lock1_history_tag"
     ## expose operation history type
     history_type:
       name: "Lock1_history_type"
-    ## expose SESAME connection status
-    connection_sensor:
-      name: "Lock1_connection"
-    ##
-    ## Fine adjustment parameters
-    ##
-    ## BLE connection timeout
-    # timeout: 5s
-    ## The ESP32 module will reboot after the specified number of connection failures (0 = do not reboot)
-    # connect_retry_limit: 0
-    ## When SESAME lock state is not known (not connected), send specified state to HomeAssistant (instead of default NONE state)
-    ## (Candidates: NONE, LOCKED, UNLOCKED, JAMMED, LOCKING, UNLOCKING)
-    # unknown_state_alternative: NONE
-    ## Send NONE(or alternative) state to HomeAssistant if disconnected from SESAME for specified time
-    # unknown_state_timeout: 10s
+  ## expose battery remaining percentage with specified name
+  battery_pct:
+    name: "Lock1_battery_level"
+  ## expose battery voltage with specified name
+  battery_voltage:
+    name: "Lock1_battery_voltage"
+  ## expose SESAME connection status
+  connection_sensor:
+    name: "Lock1_connection"
+  ##
+  ## Fine adjustment parameters
+  ##
+  ## BLE connection timeout
+  # timeout: 10s
+  ## The ESP32 module will reboot after the specified number of connection failures (0 = do not reboot)
+  # connect_retry_limit: 0
+  ## When SESAME lock state is not known (not connected), send specified state to HomeAssistant (instead of default NONE state)
+  ## (Candidates: NONE, LOCKED, UNLOCKED, JAMMED, LOCKING, UNLOCKING)
+  # unknown_state_alternative: NONE
+  ## Send NONE(or alternative) state to HomeAssistant if disconnected from SESAME for specified time
+  # unknown_state_timeout: 20s
 
   ## You can specify and control multiple SESAME devices with one ESP32.
   ## This module reboots if one of specified devices unable to connect for a certain period of time.
