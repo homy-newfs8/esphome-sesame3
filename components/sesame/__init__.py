@@ -50,6 +50,7 @@ CONF_UNKNOWN_STATE_ALTERNATIVE = "unknown_state_alternative"
 CONF_CONNECTION_SENSOR = "connection_sensor"
 CONF_UNKNOWN_STATE_TIMEOUT = "unknown_state_timeout"
 CONF_LOCK = "lock"
+CONF_ALWAYS_CONNECT = "always_connect"
 
 SesameModel_t = cg.global_ns.enum("libsesame3bt::Sesame::model_t", True)
 SESAME_MODELS = {
@@ -104,6 +105,13 @@ def validate_lockable(config):
     return config
 
 
+def validate_always_connect(config):
+    if CONF_ALWAYS_CONNECT and not config[CONF_ALWAYS_CONNECT]:
+        if CONF_LOCK in config:
+            raise cv.Invalid("When using `lock`, `always_connect` must be True")
+    return config
+
+
 CONFIG_SCHEMA = cv.All(
     cv.Schema(
         {
@@ -146,10 +154,12 @@ CONFIG_SCHEMA = cv.All(
                 device_class=DEVICE_CLASS_CONNECTIVITY,
             ),
             cv.Optional(CONF_TIMEOUT, default="10s"): cv.All(cv.positive_time_period_seconds, cv.Range(max=cv.TimePeriod(seconds=255))),
+            cv.Optional(CONF_ALWAYS_CONNECT, default=True): cv.boolean,
         }
     ).extend(cv.polling_component_schema("never")),
     validate_pubkey,
     validate_lockable,
+    validate_always_connect,
 )
 
 
@@ -169,6 +179,9 @@ async def to_code(config):
         cg.add(var.set_connect_retry_limit(config[CONF_CONNECT_RETRY_LIMIT]))
     if CONF_TIMEOUT in config:
         cg.add(var.set_connection_timeout_sec(config[CONF_TIMEOUT].total_seconds))
+    if CONF_ALWAYS_CONNECT in config:
+        cg.add(var.set_always_connect(config[CONF_ALWAYS_CONNECT]))
+
     if CONF_LOCK in config:
         lconfig = config[CONF_LOCK]
         lck = cg.new_Pvariable(lconfig[CONF_ID], var, config[CONF_MODEL], lconfig[CONF_TAG])

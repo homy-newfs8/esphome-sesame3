@@ -30,6 +30,7 @@ class SesameComponent : public PollingComponent {
 	void set_connect_retry_limit(uint16_t retry_limit) { connect_limit = retry_limit; }
 	void set_connection_timeout_sec(uint8_t timeout) { connection_timeout_sec = timeout; }
 	void set_lock(SesameLock* lock) { this->lock = lock; }
+	void set_always_connect(bool always) { this->always_connect = always; }
 	virtual float get_setup_priority() const override { return setup_priority::AFTER_WIFI; };
 
  private:
@@ -48,6 +49,14 @@ class SesameComponent : public PollingComponent {
 	uint16_t connect_limit = 0;
 	uint16_t connect_tried = 0;
 	uint8_t connection_timeout_sec = 10;
+	bool always_connect = true;
+	union {
+		uint8_t value;
+		struct {
+			bool update_status : 1;
+		};
+	} operation_requested{};
+	static_assert(sizeof(operation_requested.value) == sizeof(operation_requested));
 
 	static bool initialized;
 

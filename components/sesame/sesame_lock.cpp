@@ -50,7 +50,6 @@ SesameComponent::init(model_t model, const char* pubkey, const char* secret, con
 		mark_failed();
 		return;
 	}
-
 	sesame.set_connect_timeout_sec(connection_timeout_sec);
 	if (!sesame.begin(BLEAddress(btaddr, BLE_ADDR_RANDOM), model)) {
 		ESP_LOGE(TAG, "Failed to SesameClient::begin. May be unsupported model.");
@@ -65,7 +64,10 @@ SesameComponent::init(model_t model, const char* pubkey, const char* secret, con
 	sesame.set_state_callback([this](auto& client, auto state) { sesame_state = state; });
 	sesame.set_status_callback([this](auto& client, auto status) {
 		sesame_status = status;
-		set_timeout(0, [this]() { reflect_sesame_status(); });
+		set_timeout(0, [this]() {
+			reflect_sesame_status();
+			operation_requested.update_status = false;
+		});
 	});
 	set_state(state_t::not_connected);
 }
@@ -252,10 +254,12 @@ SesameComponent::loop() {
 				set_state(state_t::wait_reboot);
 				break;
 			}
-			if (!last_connect_attempted || now - last_connect_attempted >= CONNECT_RETRY_INTERVAL) {
-				if (enqueue_connect(this)) {
-					++connect_tried;
-					set_state(state_t::connecting);
+			if (always_connect || operation_requested.value != 0) {
+				if (!last_connect_attempted || now - last_connect_attempted >= CONNECT_RETRY_INTERVAL) {
+					if (enqueue_connect(this)) {
+						++connect_tried;
+						set_state(state_t::connecting);
+					}
 				}
 			}
 			break;
@@ -276,11 +280,14 @@ SesameComponent::loop() {
 				last_connect_attempted = 0;
 				set_state(state_t::running);
 				publish_connection_state(true);
-				start_poller();
 				ESP_LOGI(TAG, "Authenticated by SESAME");
 			}
 			break;
 		case state_t::running:
+			if (!always_connect && operation_requested.value == 0) {
+				disconnect();
+				break;
+			}
 			if (sesame_state != SesameClient::state_t::active) {
 				disconnect();
 				break;
@@ -356,6 +363,8 @@ SesameComponent::update() {
 	ESP_LOGD(TAG, "update");
 	if (my_state == state_t::running) {
 		sesame.request_status();
+	} else if (my_state == state_t::not_connected) {
+		operation_requested.update_status = true;
 	}
 }
 
