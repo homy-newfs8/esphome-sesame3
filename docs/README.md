@@ -9,85 +9,7 @@
 
 # When upgrading to 0.10.0 or later from previous versions
 
-There are big structural changes in configuration YAML. It's not difficult to convert to new schema, for example:
-
-OLD:
-```yaml
-external_components:
-- source:
-    type: git
-    url: https://github.com/homy-newfs8/esphome-sesame3
-    ref: v0.9.0
-  components: [ sesame_lock, sesame_ble ]
-
-lock:
-- platform: sesame_lock
-  name: Lock1
-  id: lock_1
-  model: sesame_5
-  tag: "My awesome system"
-  address: "ab:cd:ef:01:02:03"
-  secret: "0123456789abcdef0123456789abcdef"
-  battery_pct:
-    name: Lock1_battery_level
-  history_tag:
-    name: Lock1_history_tag
-```
-
-NEW:
-```yaml
-external_components:
-- source:
-    type: git
-    url: https://github.com/homy-newfs8/esphome-sesame3
-    ref: v0.10.0
-  components: [ sesame, sesame_ble ]
-
-sesame:
-  model: sesame_5
-  address: "ab:cd:ef:01:02:03"
-  secret: "0123456789abcdef0123456789abcdef"
-  battery_pct:
-    name: Lock1_battery_level
-  lock:
-    name: Lock1
-    id: lock_1
-    tag: "My awesome system"
-    history_tag:
-      name: Lock1_history_tag
-```
-In summary,
-
-* External component name changed from `sesame_lock` to `sesame`.
-* Definition starts with `sesame:` object.
-* Lock-specific settings have been moved under the `lock:` object.
-* Non-locking devices (such as SESAME Touch) are supported. There is no need to define a `lock:` object for such devices.
-
-If you want to control multiple SESAME devices by one ESP32, define multiple `sesame` objects:
-
-```yaml
-sesame:
-- id: lock1
-  model: sesame_5
-  address: "ab:cd:ef:01:02:03"
-  secret: "0123456789abcdef0123456789abcdef"
-  battery_pct:
-    name: Lock1_battery_level
-  lock:
-    name: Lock1
-    id: lock_1
-    tag: "My awesome system"
-    history_tag:
-      name: Lock1_history_tag
-- id: touch1
-  model: sesame_touch
-  address: "12:34:56:78:9a:bc"
-  secret: "0123456789abcdef0123456789abcdef"
-  battery_pct:
-    name: Touch1_battery_level
-  update_interval: 12h
-```
-The `id:` of the `sesame` object is not required. However, it is used as a logging prefix, which is useful for troubleshooting in multiple device environments.
+See [Upgrade Guide](#upgrade-guide-to-0100-or-later).
 
 # Setup this component
 
@@ -142,25 +64,43 @@ sesame:
     name: Lock1
     tag: "My awesome system"
 ```
+
+If define `id:` of `sesame:` component, it will be used as logging prefix.
+
+```yaml
+sesame:
+  id: sesame1
+  model: sesame_5
+    :
+    :
+```
+```
+[05:23:27][D][sesame1:317]: connecting
+[05:23:31][D][sesame1:321]: connect done
+[05:23:31][I][sesame1:283]: Authenticated by SESAME
+```
+
 ## Configuration variables
 
 * **model** (**Required**): Model of SESAME. Use one of: `sesame_5`, `sesame_5_pro`, `sesame_touch`, `sesame_touch_pro`, `open_sensor`, `sesame_bike_2`, `sesame_4`, `sesame_3`, `sesame_bot`, `sesame_bike`
 * **address** (**Required**, string): See [below](#parameter-values-for-your-sesame).
 * **secret** (**Required**, string): See [below](#parameter-values-for-your-sesame).
 * **public_key** (**Required** for SESAME OS2 models, string): See [below](#parameter-values-for-your-sesame).
-* **timeout** (*Optional*, time): Connection to SESAME timeout value. Defaults to `10s`.
+* **timeout** (*Optional*, [Time](https://esphome.io/guides/configuration-types#config-time)): Connection to SESAME timeout value. Defaults to `10s`.
 * **connect_retry_limit** (*Optional*, int): Specifies the number of connection failures before reboot the ESP32 module. Defaults to `0` (do not reboot).
+* **always_connect** (*Optional*, bool): Keep connection with SESAME. Must be `true` when this component contains `lock` object. Defaults to `true`. If set to `false`, disconnect from SESAME after receiving the status (and reconnect if `update_interval` is set).
+* **update_interval** (*Optional*, [Time](https://esphome.io/guides/configuration-types#config-time)): Request SESAME to send current status with this interval. Some devices (SESAME Touch) do not send updated status without this option. Defaults to `never`.
 * **lock** (*Optional*, sesame_lock): Lock specific configurations. See [below](#lock-specific-variables).
 
 ### Expose SESAME status as sensors
 
-* **battery_pct** (*Optional*, sensor): See [below](#expose-sesame-battery-information-as-sensor-value)
+* **battery_pct** (*Optional*, [Sensor](https://esphome.io/components/sensor/#config-sensor)): See [below](#expose-sesame-battery-information-as-sensor-value)
 	* **name** (**Required**, string): The name of the battery level sensor.
 	* All other options from [sensor](https://esphome.io/components/sensor/#config-sensor)
-* **battery_voltage** (*Optional*, sensor): See [below](#expose-sesame-battery-information-as-sensor-value)
+* **battery_voltage** (*Optional*, [Sensor](https://esphome.io/components/sensor/#config-sensor)): See [below](#expose-sesame-battery-information-as-sensor-value)
 	* **name** (**Required**, string): The name of the voltage sensor.
 	* All other options from [sensor](https://esphome.io/components/sensor/#config-sensor)
-* **connection_sensor** (*Optional*, binary_sensor): SESAME connection state is exposed as a binary sensor.
+* **connection_sensor** (*Optional*, [Binary Sensor](https://esphome.io/components/binary_sensor/#base-binary-sensor-configuration)): SESAME connection state is exposed as a binary sensor.
 	* **name** (**Required**, string): The name of connection sensor.
   * All other options from [binary_sensor](https://esphome.io/components/binary_sensor/#base-binary-sensor-configuration)
 
@@ -169,21 +109,21 @@ sesame:
 In addition to base [Lock](https://esphome.io/components/lock/#base-lock-configuration) variables:
 
 * **tag** (*Optional*, string): Tag value recorded on operation history. Defaults to "ESPHome". If you want to use various tag values on automation, see [below](#using-various-tag-values-on-operation).
-* **history_tag** (*Optional*, text_sensor): See [below](#operation-history-tag-and-history-type)
+* **history_tag** (*Optional*, [Text Sensor](https://esphome.io/components/text_sensor/#base-text-sensor-configuration)): See [below](#operation-history-tag-and-history-type)
   * **name** (**Required**, string): The name of the history tag text_sensor.
   * All other options from [text_sensor](https://esphome.io/components/text_sensor/#base-text-sensor-configuration)
-* **history_type** (*Optional*, sensor): See [below](#operation-history-tag-and-history-type)
+* **history_type** (*Optional*, [Sensor](https://esphome.io/components/sensor/#config-sensor)): See [below](#operation-history-tag-and-history-type)
   * **name** (**Required**, string): The name of the history type sensor.
   * All other options from [sensor](https://esphome.io/components/sensor/#config-sensor)
 * **unknown_state_alternative** (*Optional*, lock_state): If the lock state of SESAME is unknown (for example, before connecting or during disconnection), this module notifies HomeAssistant of the `NONE` state. Currently, HomeAssinstant seems to treat the `NONE` state as "Unlocked". <br/>
 If you don't want it to be treated as "Unlocked", you can send the unknown state as any other state (candidates: `NONE`, `LOCKED`, `UNLOCKED`, `JAMMED`, `LOCKING`, `UNLOCKING`). If not set as this variable, this module will not send `LOCKING` and `UNLOCKING`, so you can write automation scripts that interpret these values as "UNKNOWN".
-* **unknown_state_timeout** (*Optional*, time): If you do not want disconnection from SESAME to be immediately treated as unknown, set a timeout value with this variable. Defaults to `20s`.
+* **unknown_state_timeout** (*Optional*, [Time](https://esphome.io/guides/configuration-types#config-time)): If you do not want disconnection from SESAME to be immediately treated as unknown, set a timeout value with this variable. Defaults to `20s`.
 
 ## Parameter values for your SESAME
 
 ### `address` (Bluetooth LE MAC Address)
 
-You can identify your SESAME address by using ESPHome BLE tracker with `sesame_ble` component. First, remove `lock:` component definition and add below to your configuration:
+You can identify your SESAME address by using ESPHome BLE tracker with `sesame_ble` component. First, remove `sesame:` component definition and add below to your configuration:
 
 ```yaml
 logger:
@@ -416,6 +356,99 @@ sesame:
 ```
 
 This setting defers the connection to SESAME until the very end of ESPHome's initialization.
+
+# Upgrade Guide to 0.10.0 or later
+
+There are big structural changes in configuration YAML. It's not difficult to convert to new schema, for example:
+
+OLD:
+```yaml
+esphome:
+  libraries:
+    - https://github.com/homy-newfs8/libsesame3bt#0.16.0
+    :
+    :
+external_components:
+- source:
+    type: git
+    url: https://github.com/homy-newfs8/esphome-sesame3
+    ref: v0.9.0
+  components: [ sesame_lock, sesame_ble ]
+
+lock:
+- platform: sesame_lock
+  name: Lock1
+  id: lock_1
+  model: sesame_5
+  tag: "My awesome system"
+  address: "ab:cd:ef:01:02:03"
+  secret: "0123456789abcdef0123456789abcdef"
+  battery_pct:
+    name: Lock1_battery_level
+  history_tag:
+    name: Lock1_history_tag
+```
+
+NEW:
+```yaml
+esphome:
+  libraries:
+    - https://github.com/homy-newfs8/libsesame3bt#0.17.0
+    :
+    :
+external_components:
+- source:
+    type: git
+    url: https://github.com/homy-newfs8/esphome-sesame3
+    ref: v0.10.0
+  components: [ sesame, sesame_ble ]
+
+sesame:
+  model: sesame_5
+  address: "ab:cd:ef:01:02:03"
+  secret: "0123456789abcdef0123456789abcdef"
+  battery_pct:
+    name: Lock1_battery_level
+  lock:
+    name: Lock1
+    id: lock_1
+    tag: "My awesome system"
+    history_tag:
+      name: Lock1_history_tag
+```
+In summary,
+
+* Update libsesame3bt version.
+* External component name changed from `sesame_lock` to `sesame`.
+* Definition starts with `sesame:` object.
+* Lock-specific settings have been moved under the `lock:` object.
+* Non-locking devices (such as SESAME Touch) are supported. There is no need to define a `lock:` object for such devices.
+
+If you want to control multiple SESAME devices by one ESP32, define multiple `sesame` objects:
+
+```yaml
+sesame:
+- id: lock1
+  model: sesame_5
+  address: "ab:cd:ef:01:02:03"
+  secret: "0123456789abcdef0123456789abcdef"
+  battery_pct:
+    name: Lock1_battery_level
+  lock:
+    name: Lock1
+    id: lock_1
+    tag: "My awesome system"
+    history_tag:
+      name: Lock1_history_tag
+- id: touch1
+  model: sesame_touch
+  address: "12:34:56:78:9a:bc"
+  secret: "0123456789abcdef0123456789abcdef"
+  battery_pct:
+    name: Touch1_battery_level
+  update_interval: 12h
+```
+The `id:` of the `sesame` object is not required. However, it is used as a logging prefix, which is useful for troubleshooting in multiple device environments.
 
 # Related
 

@@ -2,29 +2,41 @@ esphome:
   name: entrance
   friendly_name: Entrance
   libraries:
-    - https://github.com/homy-newfs8/libsesame3bt#0.17.0
-    # - symlink://../../../../../../PlatformIO/Projects/libsesame3bt
+  - https://github.com/homy-newfs8/libsesame3bt#0.17.0
+  # - symlink://../../../../../../PlatformIO/Projects/libsesame3bt
   platformio_options:
     build_flags:
-      - -std=gnu++17 -Wall -Wextra
-      - -DMBEDTLS_DEPRECATED_REMOVED -DCONFIG_BT_NIMBLE_ROLE_BROADCASTER_DISABLED -DCONFIG_BT_NIMBLE_ROLE_PERIPHERAL_DISABLED
-# Configure the maximum number of connections as required
-      - -DCONFIG_BT_NIMBLE_MAX_CONNECTIONS=4
+    - -std=gnu++17 -Wall -Wextra
+    - -DMBEDTLS_DEPRECATED_REMOVED -DCONFIG_BT_NIMBLE_ROLE_BROADCASTER_DISABLED -DCONFIG_BT_NIMBLE_ROLE_PERIPHERAL_DISABLED
+# Configure the maximum number of connections as required (maximum: 9)
+    - -DCONFIG_BT_NIMBLE_MAX_CONNECTIONS=6
     build_unflags:
-      - -std=gnu++11
+    - -std=gnu++11
     lib_ldf_mode: 'deep'
 external_components:
-  # - source:
-  #     type: git
-  #     url: https://github.com/homy-newfs8/esphome-sesame3
-  #     ref: v0.10.0
-  #   components: [ sesame, sesame_ble ]
-  - source: 'components'
+- source:
+    type: git
+    url: https://github.com/homy-newfs8/esphome-sesame3
+    ref: v0.10.0
+  components: [ sesame, sesame_ble ]
+# - source: 'components'
 
 esp32:
   board: esp32-c3-devkitm-1
   framework:
     type: arduino
+
+## Check memory usage
+# debug:
+#   update_interval: 10s
+# sensor:
+#   - platform: debug
+#     free:
+#       name: "Heap Free"
+#     block:
+#       name: "Heap Max Block"
+#     loop_time:
+#       name: "Loop Time"
 
 ## Enable logging
 logger:
@@ -68,11 +80,11 @@ sesame:
 - id: sesame1
   ## model: Requried: sesame_5 / sesame_5_pro / sesame_touch / sesame_touch_pro / open_sensor / sesame_bike_2 / sesame_4 / sesame_3 / sesame_bot / sesame_bike
   model: sesame_5
+  address: !secret sesame5_address
   ## public_key: Required for sesame_3 / sesame_4 / sesame_bot / sesame_bike
   ## for sesame_5 / sesame_5_pro comment out public_key line or specify any string (will be ignored)
   public_key: ""
   secret: !secret sesame5_secret
-  address: !secret sesame5_address
   lock:
     name: Lock1
     id: lock_1
@@ -109,37 +121,62 @@ sesame:
   ## Send NONE(or alternative) state to HomeAssistant if disconnected from SESAME for specified time
   # unknown_state_timeout: 20s
 
-  ## You can specify and control multiple SESAME devices with one ESP32.
-  ## This module reboots if one of specified devices unable to connect for a certain period of time.
-  ## Be careful not to specify a mix of stable and unstable devices.
-
-  # - platform: sesame_lock
-  #   unknown_state_alternative: LOCKING
-  #   name: Lock2
-  #   id: lock_2
-  #   model: sesame_3
-  #   public_key: !secret sesame3_pubkey
-  #   secret: !secret sesame3_secret
-  #   address: !secret sesame3_address
-  #   connection_sensor:
-  #     name: "Lock2_connection"
-  # - platform: sesame_lock
-  #   name: Bot1
-  #   id: bot_1
-  #   model: sesame_bot
-  #   public_key: !secret sesamebot_pubkey
-  #   secret: !secret sesamebot_secret
-  #   address: !secret sesamebot_address
-  # - platform: sesame_lock
-  #   name: Bike1
-  #   id: bike_1
-  #   model: sesame_bike
-  #   public_key: !secret sesamebike_pubkey
-  #   secret: !secret sesamebike_secret
-  #   address: !secret sesamebike_address
-
+## You can specify and control multiple SESAME devices with one ESP32.
+## This module reboots if one of specified devices unable to connect for a certain period of time.
+## Be careful not to specify a mix of stable and unstable devices.
+##
+# - id: lock2
+#   model: sesame_3
+#   address: !secret sesame3_address
+#   public_key: !secret sesame3_pubkey
+#   secret: !secret sesame3_secret
+#   lock:
+#     unknown_state_alternative: LOCKING
+#     name: Lock2
+#     id: lock_2
+#   connection_sensor:
+#     name: Lock2_connection
+# - id: bot1
+#   model: sesame_bot
+#   address: !secret sesamebot_address
+#   public_key: !secret sesamebot_pubkey
+#   secret: !secret sesamebot_secret
+#   battery_pct:
+#     name: Bot1_battery_level
+#   battery_voltage:
+#     name: Bot1_battery_voltage
+#   lock:
+#     name: Bot1
+#     id: bot_1
+# - id: bike1
+#   model: sesame_bike
+#   address: !secret sesamebike_address
+#   public_key: !secret sesamebike_pubkey
+#   secret: !secret sesamebike_secret
+#   lock:
+#     name: Bike1
+#     id: bike_1
+# - id: touch1
+#   model: sesame_touch
+#   secret: !secret touch_secret
+#   address: !secret touch_address
+#   always_connect: false
+#   update_interval: 12h
+#   battery_pct:
+#     name: Touch1_battery_level
+#   battery_voltage:
+#     name: Touch1_battery_voltage
+#   connection_sensor:
+#     name: Touch1_connection
+# - id: lock3
+#   model: sesame_5
+#   address: !secret sesame5_1_address
+#   secret: !secret sesame5_1_secret
+#   lock:
+#     id: lock_3
+#     name: Lock3
+#   battery_pct:
+#     name: "Lock3_battery_level"
 
 ## Use below definitions only for discovering your SESAME BT Addresses.
-## (lock: and esp32_ble_tracker: are exclusive)
-# esp32_ble_tracker:
 # sesame_ble:

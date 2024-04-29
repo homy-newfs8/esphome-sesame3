@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.10.0] 2024-04-29
+
+- Big YAML schema change (see README).
+- Support SESAME Touch / Touch PRO / Bike 2 / Open Sensor (Tested only on Touch. Please report other devices).
+- Add option
+  - always_connect
+  - update_interval
+
 ## [v0.9.0] 2024-04-04
 
 - Update libsesame3bt library to 0.16.0
