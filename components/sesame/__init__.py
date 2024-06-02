@@ -160,6 +160,7 @@ CONFIG_SCHEMA = cv.All(
     validate_pubkey,
     validate_lockable,
     validate_always_connect,
+    cv.only_with_arduino,
 )
 
 
