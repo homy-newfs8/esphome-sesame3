@@ -12,7 +12,6 @@ esphome:
     - -DCONFIG_BT_NIMBLE_MAX_CONNECTIONS=6
     build_unflags:
     - -std=gnu++11
-    lib_ldf_mode: 'deep'
 external_components:
 - source:
     type: git
@@ -43,7 +42,7 @@ logger:
 
 ## Enable Home Assistant API
 api:
-  password: ""
+  password: !secret api_password
   ## Example service to lock/unlock with various history tags specified in Home Assistant.
   ## In Home Assistant, this service will be seen as `esphome.entrance_sesame_with_tag`
   services:
@@ -59,8 +58,8 @@ api:
           id(lock_1).unlock(tag);
         }
 
-# ota:
-#   password: ""
+ota:
+  password: !secret ota_password
 
 wifi:
   ssid: !secret wifi_ssid
