@@ -1,6 +1,5 @@
 #include "lock_feature.h"
 #include <esphome/core/hal.h>
-#include "SesameClient.h"
 #include "sesame_component.h"
 
 using esphome::lock::LockState;
@@ -23,8 +22,7 @@ is_bot(model_t model) {
 	return model == model_t::sesame_bot || model == model_t::sesame_bot_2;
 }
 
-SesameLock::SesameLock(SesameComponent* parent, model_t model, const char* tag) : parent_(parent) {
-	TAG = parent->TAG;
+SesameLock::SesameLock(SesameComponent* parent, model_t model, const char* tag) : parent_(parent), TAG(parent->TAG) {
 	if (is_bot(model)) {
 		traits.set_supports_open(true);
 	}

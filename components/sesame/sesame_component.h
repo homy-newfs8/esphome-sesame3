@@ -2,13 +2,10 @@
 
 #include <SesameClient.h>
 #include <esphome/components/binary_sensor/binary_sensor.h>
-#include <esphome/components/lock/lock.h>
 #include <esphome/components/sensor/sensor.h>
-#include <esphome/components/text_sensor/text_sensor.h>
 #include <esphome/core/component.h>
 #include <mutex>
 #include <optional>
-#include <string_view>
 #include "feature.h"
 
 namespace esphome {
@@ -17,8 +14,10 @@ namespace sesame_lock {
 enum class state_t : int8_t { not_connected, connecting, authenticating, running, wait_reboot };
 
 class SesameLock;
+class BotFeature;
 class SesameComponent : public PollingComponent {
 	friend class SesameLock;
+	friend class BotFeature;
 
  public:
 	SesameComponent(const char* id);

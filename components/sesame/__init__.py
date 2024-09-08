@@ -13,6 +13,7 @@ from esphome.const import (
     DEVICE_CLASS_BATTERY,
     DEVICE_CLASS_CONNECTIVITY,
     DEVICE_CLASS_EMPTY,
+    DEVICE_CLASS_RUNNING,
     DEVICE_CLASS_VOLTAGE,
     STATE_CLASS_NONE,
     STATE_CLASS_MEASUREMENT,
@@ -38,6 +39,7 @@ LOCK_STATES = {
 sesame_lock_ns = cg.esphome_ns.namespace("sesame_lock")
 SesameComponent = sesame_lock_ns.class_("SesameComponent", cg.PollingComponent)
 SesameLock = sesame_lock_ns.class_("SesameLock", lock.Lock)
+BotFeature = sesame_lock_ns.class_("BotFeature")
 
 CONF_PUBLIC_KEY = "public_key"
 CONF_SECRET = "secret"
@@ -50,6 +52,8 @@ CONF_UNKNOWN_STATE_ALTERNATIVE = "unknown_state_alternative"
 CONF_CONNECTION_SENSOR = "connection_sensor"
 CONF_UNKNOWN_STATE_TIMEOUT = "unknown_state_timeout"
 CONF_LOCK = "lock"
+CONF_BOT = "bot"
+CONF_RUNNING_SENSOR = "running_sensor"
 CONF_ALWAYS_CONNECT = "always_connect"
 
 SesameModel_t = cg.global_ns.enum("libsesame3bt::Sesame::model_t", True)
@@ -74,7 +78,7 @@ def is_os3_model(model):
 
 
 def is_lockable_model(model):
-    return model not in ("open_sensor", "sesame_touch_pro", "sesame_touch")
+    return model not in ("open_sensor", "sesame_touch_pro", "sesame_touch", "sesame_bot_2")
 
 
 def is_hex_string(str, valid_len):
@@ -108,8 +112,16 @@ def validate_lockable(config):
 
 def validate_always_connect(config):
     if CONF_ALWAYS_CONNECT and not config[CONF_ALWAYS_CONNECT]:
-        if CONF_LOCK in config:
-            raise cv.Invalid("When using `lock`, `always_connect` must be True")
+        if CONF_LOCK in config or CONF_BOT in config:
+            raise cv.Invalid("When using `lock` or `bot`, `always_connect` must be True")
+    return config
+
+
+def validate_bot_features(config):
+    if CONF_LOCK in config and CONF_BOT in config:
+        raise cv.Invalid("Cannot define both `lock` and `bot` on one Bot device")
+    if CONF_BOT in config and config[CONF_MODEL] not in ("sesame_bot", "sesame_bot_2"):
+        raise cv.Invalid("`bot` can be defined in Bot device")
     return config
 
 
@@ -138,6 +150,14 @@ CONFIG_SCHEMA = cv.All(
                     ),
                 }
             ),
+            cv.Optional(CONF_BOT): cv.Schema(
+                {
+                    cv.GenerateID(): cv.declare_id(BotFeature),
+                    cv.Optional(CONF_RUNNING_SENSOR): binary_sensor.binary_sensor_schema(
+                        device_class=DEVICE_CLASS_RUNNING,
+                    ),
+                }
+            ),
             cv.Optional(CONF_BATTERY_PCT): sensor.sensor_schema(
                 unit_of_measurement=UNIT_PERCENT,
                 device_class=DEVICE_CLASS_BATTERY,
@@ -161,6 +181,7 @@ CONFIG_SCHEMA = cv.All(
     validate_pubkey,
     validate_lockable,
     validate_always_connect,
+    validate_bot_features,
     cv.only_with_arduino,
 )
 
@@ -200,4 +221,12 @@ async def to_code(config):
             cg.add(lck.set_unknown_state_timeout_sec(lconfig[CONF_UNKNOWN_STATE_TIMEOUT].total_seconds))
         cg.add(var.set_feature(lck))
         cg.add(lck.init())
+    if CONF_BOT in config:
+        bconfig = config[CONF_BOT]
+        bot = cg.new_Pvariable(bconfig[CONF_ID], var, config[CONF_MODEL])
+        if CONF_RUNNING_SENSOR in bconfig:
+            s = await binary_sensor.new_binary_sensor(bconfig[CONF_RUNNING_SENSOR])
+            cg.add(bot.set_running_sensor(s))
+        cg.add(var.set_feature(bot))
+        cg.add(bot.init())
     cg.add(var.init(config[CONF_MODEL], config.get(CONF_PUBLIC_KEY), config[CONF_SECRET], str(config[CONF_ADDRESS])))

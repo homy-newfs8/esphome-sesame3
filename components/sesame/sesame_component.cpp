@@ -1,9 +1,5 @@
 #include "sesame_component.h"
-#include <Arduino.h>
 #include <esphome/core/application.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <string_view>
 
 namespace {
 

@@ -1,12 +1,10 @@
 #pragma once
 
 #include <Sesame.h>
-#include <esphome/components/binary_sensor/binary_sensor.h>
 #include <esphome/components/lock/lock.h>
 #include <esphome/components/sensor/sensor.h>
 #include <esphome/components/text_sensor/text_sensor.h>
 #include <esphome/core/component.h>
-#include <mutex>
 #include <optional>
 #include <string_view>
 #include "feature.h"
@@ -20,7 +18,7 @@ class SesameLock : public lock::Lock, public Feature {
 
  public:
 	SesameLock(SesameComponent* parent, libsesame3bt::Sesame::model_t model, const char* tag);
-	void init();
+	virtual void init() override;
 	using lock::Lock::lock;
 	using lock::Lock::open;
 	using lock::Lock::unlock;
@@ -54,13 +52,11 @@ class SesameLock : public lock::Lock, public Feature {
 	virtual void open_latch() override;
 	bool operable_warn() const;
 	bool handle_history() const { return history_tag_sensor || history_type_sensor; }
-	void reflect_sesame_status();
 	void test_timeout();
 	void test_unknown_state();
 	void publish_lock_state(bool force_publish = false);
 	void update_lock_state(lock::LockState);
 	void publish_lock_history_state();
-	bool support_jammed() const;
 };
 
 }  // namespace sesame_lock
