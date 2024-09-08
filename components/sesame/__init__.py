@@ -65,6 +65,7 @@ SESAME_MODELS = {
     "open_sensor": SesameModel_t.open_sensor_1,
     "sesame_touch_pro": SesameModel_t.sesame_touch_pro,
     "sesame_touch": SesameModel_t.sesame_touch,
+    "sesame_bot_2": SesameModel_t.sesame_bot_2,
 }
 
 
@@ -197,6 +198,6 @@ async def to_code(config):
             cg.add(lck.set_unknown_state_alternative(lconfig[CONF_UNKNOWN_STATE_ALTERNATIVE]))
         if CONF_UNKNOWN_STATE_TIMEOUT in lconfig:
             cg.add(lck.set_unknown_state_timeout_sec(lconfig[CONF_UNKNOWN_STATE_TIMEOUT].total_seconds))
-        cg.add(var.set_lock(lck))
+        cg.add(var.set_feature(lck))
         cg.add(lck.init())
     cg.add(var.init(config[CONF_MODEL], config.get(CONF_PUBLIC_KEY), config[CONF_SECRET], str(config[CONF_ADDRESS])))
