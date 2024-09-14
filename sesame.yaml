@@ -25,6 +25,20 @@ esp32:
   framework:
     type: arduino
 
+ota:
+  password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_passphrase
+
+  ## Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Sesame Fallback Hotspot"
+    password: !secret wifi_fallback_password
+
+captive_portal:
+
 ## Check memory usage
 # debug:
 #   update_interval: 10s
@@ -57,20 +71,30 @@ api:
         } else {
           id(lock_1).unlock(tag);
         }
+  - service: run_bot2_script
+    variables:
+      script_no: int
+    then:
+      lambda: |-
+        id(bot_2).run(script_no);
 
-ota:
-  password: !secret ota_password
-
-wifi:
-  ssid: !secret wifi_ssid
-  password: !secret wifi_passphrase
-
-  ## Enable fallback hotspot (captive portal) in case wifi connection fails
-  ap:
-    ssid: "Sesame Fallback Hotspot"
-    password: !secret wifi_fallback_password
-
-captive_portal:
+button:
+- platform: template
+  name: "Run Bot2 Script1"
+  device_class: opening
+  on_press:
+  - lambda: |-
+      id(bot_2).run(0);
+- platform: template
+  name: "Run Bot2 Script3"
+  on_press:
+  - lambda: |-
+      id(bot_2).run(2);
+- platform: template
+  name: "Run Bot2 Default Script"
+  on_press:
+  - lambda: |-
+      id(bot_2).run();
 
 ## Supported devices examples
 ## Choose one or more you want to use
@@ -176,6 +200,12 @@ sesame:
 #     name: Lock3
 #   battery_pct:
 #     name: "Lock3_battery_level"
+- id: bot2
+  model: sesame_bot_2
+  address: !secret bot2_address
+  secret: !secret bot2_secret
+  bot:
+    id: bot_2
 
 ## Use below definitions only for discovering your SESAME BT Addresses.
 # sesame_ble:

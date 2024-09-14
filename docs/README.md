@@ -1,10 +1,10 @@
 # esphome-sesame3
 
-[ESPHome](https://esphome.io/) Smart Lock component for CANDYHOUSE [SESAME 5](https://jp.candyhouse.co/products/sesame5) / [SESAME 5 PRO](https://jp.candyhouse.co/products/sesame5-pro) / [SESAME bot](https://jp.candyhouse.co/products/sesame3-bot) / SESAME 3 / SESAME 4 / SESAME Bike, control via Bluetooth LE
+[ESPHome](https://esphome.io/) Smart Lock component for CANDYHOUSE [SESAME 5](https://jp.candyhouse.co/products/sesame5) / [SESAME 5 PRO](https://jp.candyhouse.co/products/sesame5-pro) / [SESAME Bot 2](https://jp.candyhouse.co/products/sesamebot2) / SESAME bot / SESAME 3 / SESAME 4 / SESAME Bike, control via Bluetooth LE
 
 > [!NOTE] This component does not use ESPHome's built-in `BTClient`
 > functionality. Therefore, this component cannot coexist with other BLE
-> components in the same ESP32. Use this component in a separate ESP32 device
+> components on the same ESP32. Use this component with a separate ESP32 device
 > from other BLE components.
 
 # When upgrading to 0.10.0 or later from previous versions
@@ -71,8 +71,7 @@ If define `id:` of `sesame:` component, it will be used as logging prefix.
 sesame:
   id: sesame1
   model: sesame_5
-    :
-    :
+    ⋮
 ```
 ```
 [05:23:27][D][sesame1:317]: connecting
@@ -82,10 +81,10 @@ sesame:
 
 ## Configuration variables
 
-* **model** (**Required**): Model of SESAME. Use one of: `sesame_5`, `sesame_5_pro`, `sesame_touch`, `sesame_touch_pro`, `open_sensor`, `sesame_bike_2`, `sesame_4`, `sesame_3`, `sesame_bot`, `sesame_bike`
-* **address** (**Required**, string): See [below](#parameter-values-for-your-sesame).
-* **secret** (**Required**, string): See [below](#parameter-values-for-your-sesame).
-* **public_key** (**Required** for SESAME OS2 models, string): See [below](#parameter-values-for-your-sesame).
+* **model** (**Required**): Model of SESAME. Use one of: `sesame_5`, `sesame_5_pro`, `sesame_bot_2`, `sesame_touch`, `sesame_touch_pro`, `sesame_4`, `sesame_3`, `sesame_bot`, `sesame_bike`
+* **address** (**Required**, string): See [below](#identify-parameter-values-for-sesame-devices).
+* **secret** (**Required**, string): See [below](#identify-parameter-values-for-sesame-devices).
+* **public_key** (**Required** for SESAME OS2 models, string): See [below](#identify-parameter-values-for-sesame-devices).
 * **timeout** (*Optional*, [Time](https://esphome.io/guides/configuration-types#config-time)): Connection to SESAME timeout value. Defaults to `10s`.
 * **connect_retry_limit** (*Optional*, int): Specifies the number of connection failures before reboot the ESP32 module. Defaults to `0` (do not reboot).
 * **always_connect** (*Optional*, bool): Keep connection with SESAME. Must be `true` when this component contains `lock` object. Defaults to `true`. If set to `false`, disconnect from SESAME after receiving the status (and reconnect if `update_interval` is set).
@@ -106,6 +105,8 @@ sesame:
 
 ## Lock specific variables
 
+For lock devices (`sesame_5`, `sesame_5_pro`, `sesame_4`, `sesame_3`, `sesame_bot`, `sesame_bike`), lock functionality can be used.
+
 In addition to base [Lock](https://esphome.io/components/lock/#base-lock-configuration) variables:
 
 * **tag** (*Optional*, string): Tag value recorded on operation history. Defaults to "ESPHome". If you want to use various tag values on automation, see [below](#using-various-tag-values-on-operation).
@@ -119,7 +120,17 @@ In addition to base [Lock](https://esphome.io/components/lock/#base-lock-configu
 If you don't want it to be treated as "Unlocked", you can send the unknown state as any other state (candidates: `NONE`, `LOCKED`, `UNLOCKED`, `JAMMED`, `LOCKING`, `UNLOCKING`). If not set as this variable, this module will not send `LOCKING` and `UNLOCKING`, so you can write automation scripts that interpret these values as "UNKNOWN".
 * **unknown_state_timeout** (*Optional*, [Time](https://esphome.io/guides/configuration-types#config-time)): If you do not want disconnection from SESAME to be immediately treated as unknown, set a timeout value with this variable. Defaults to `20s`.
 
-## Parameter values for your SESAME
+## Bot specific settings (From v0.11.0)
+
+For `sesame_bot`, you can specify [lock](#lock-specific-variables) or [bot](#bot-specific-settings-from-v0110).
+For `sesame_bot_2`, [bot](#bot-specific-settings-from-v0110) can be used.
+See [bot usage](#sesame-bot-usage) for detailed example.
+
+* **bot**: Bot settings section marker.
+  * **id** (*Optional*, string): Specify the ID for code generation.
+  * **running_sensor** (*Optional*, [Binary Sensor](https://esphome.io/components/binary_sensor/index.html#base-binary-sensor-configuration)): Expose `ON` value while Bot is running.
+
+## Identify parameter values ​​for SESAME devices
 
 ### `address` (Bluetooth LE MAC Address)
 
@@ -132,7 +143,7 @@ sesame_ble:
 ```
 (`logger` must be specified for logging output)
 
-Upload and start ESP32, logging message contains discovered SESAME devices information:
+Upload and restart ESP32, logging message contains discovered SESAME devices information:
 
 ```
 [08:20:23][I][sesame_ble:107]: 01:02:03:04:05:06 SESAME 5 UUID=01020304-0102-0102-0102-010203040506
@@ -166,8 +177,8 @@ Display `Owner` or `Manager` key and decode the QR code with any QR decoder. Dec
 ```URI
 ssm://UI?t=sk&sk=BQECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUm&l=1&n=セサミ 5
 ```
-
-Query parameter `sk` is `base64` encoded binary data.
+Query parameter `sk` is `base64` encoded binary data
+(if `sk` value contains `%2A` or `%2F`, replace them with `+` or `/`).
 
 Above base64 string is decoded as below:
 
@@ -187,12 +198,12 @@ sesame:
   secret: "0102030405060708090a0b0c0d0e0f10"
 ```
 
-On SESAME OS2 devices (SESAME 3 / 4 / bot / bike), `sk` is more long string and decoded binary is 99 bytes. Still the location and length of secret is the same.
+On SESAME OS2 devices (SESAME 3 / SESAME 4 / SESAME bot / SESAME bike), `sk` is more long string and decoded binary is 99 bytes. Still the location and length of secret is the same.
 
 
 ### `public_key` (Public key for SESAME OS2 devices)
 
-Public key for encryption. Do not specify this parameter for SESAME OS3 devices (SESAME 5 / SESAME 5 PRO).
+Public key for encryption. Do not specify this parameter for SESAME OS3 devices (SESAME 5 / SESAME 5 PRO / SESAME Bot 2 / SESAME Touch / SESAME Touch PRO).
 
 On OS2 devices, you can retrieve key value from QR code.
 
@@ -237,8 +248,7 @@ You can expose SESAME battery remaining percentage and voltage value, then show 
 
 ```yaml
 sesame:
-    :
-    :
+    ⋮
   battery_pct:
     name: "Lock1_battery_level"
   battery_voltage:
@@ -250,8 +260,7 @@ You can expose who or what operated SESAME. These values are updated before lock
 
 ```yaml
 sesame:
-    :
-    :
+    ⋮
   lock:
     history_tag:
       name: "Lock1_history_tag"
@@ -290,11 +299,92 @@ History is Lock specific feature, so define these sensors under `lock:` object.
 |    15 | WM2_UNLOCK            | By smartphone app (via Wi-Fi Module 2)                         |
 |    16 | WEB_LOCK              | By [Official Web API](https://doc.candyhouse.co/ja/SesameAPI/) |
 |    17 | WEB_UNLOCK            | By [Official Web API](https://doc.candyhouse.co/ja/SesameAPI/) |
-|    21 | DRIVE_CLICKED         | SESAME bot (Not listed in Android API)                          |
+|    21 | DRIVE_CLICKED         | SESAME bot (Not listed in Android API)                         |
 
-# Notes on SESAME bot
+# SESAME bot usage
 
-SESAME bot supports `lock.open` action in addition to `lock.lock` and `lock.unlock` actions. `lock.open` performs the same behavior as a smartphone SESAME app.
+## As lock device
+
+When `lock` setting is specified for `sesame_bot` device, you can use `lock.open` action in addition to `lock.lock` and `lock.unlock` actions. `lock.open` performs the same action as tapping the button on the smartphone SESAME app.
+
+```yaml
+sesame:
+  model: sesame_bot
+    ⋮
+  lock:
+    name: some name
+```
+
+## Run the script directory
+
+The `sesame_bot_2` device cannot be used as `lock` device. You can specify `bot` settings instead.
+
+```yaml
+sesame:
+  model: sesame_bot_2
+    ⋮
+  bot:
+    id: bot_2
+    running_sensor:
+      name: Bot2 is running
+```
+
+The id `bot_2` can be referenced from lambda sections (see [below](#define-bot-buttons-on-esphome) and [below](#define-bot-service-callable-from-homeassistant)).
+
+The `sesame_bot` devices can also be used with the `bot` settings.
+
+When used with the `bot` setting, the device will not expose the lock functionality (Lock/Unlock buttons will not automatically appear in Home Assistant).
+
+To control a Bot, actions must be defined. You can define action button or API service.
+
+### Define Bot buttons on ESPHome
+
+SESAME bot 2 has 10 moving scripts (Can edit on smartphone app). Define button on specific script as follows (Script numbers range from 0 to 9 for `sesame_bot_2` devices, and from 0 to 2 for `sesame_bot` devices).
+
+```yaml
+button:
+- platform: template
+  name: "Run Bot2 Script1"
+  on_press:
+  - lambda: |-
+      id(bot_2).run(0);
+- platform: template
+  name: "Run Bot2 Script3"
+  on_press:
+  - lambda: |-
+      id(bot_2).run(2);
+- platform: template
+  name: "Run Bot2 Default Script"
+  on_press:
+  - lambda: |-
+      id(bot_2).run();
+```
+
+Call `run()` without argument invoke the default script (Selected by smartphone app).
+
+On Home Assistant above buttons appear as follows:
+
+![example buttons](example-buttons.jpg)
+
+The `running_sensor` value is also shown (Bot2 is running).
+
+### Define Bot service callable from HomeAssistant
+
+```yaml
+api:
+  services:
+  - service: run_bot2_script
+    variables:
+      script_no: int
+    then:
+      lambda: |-
+        id(bot_2).run(script_no);
+```
+
+Above service can be called from Home Assistant as below:
+
+![example bot service](example-bot-service.jpg)
+
 
 # Using various tag values on operation
 
@@ -318,13 +408,11 @@ api:
         }
 
 sesame:
-    :
-    :
+    ⋮
   lock:
     id: lock_1
     name: Lock1
-      :
-      :
+      ⋮
 ```
 This service will be seen as `esphome.entrance_sesame_with_tag` on Home Assistant ("entrance" is the entity name of ESPHome device).
 
@@ -333,7 +421,7 @@ This service will be seen as `esphome.entrance_sesame_with_tag` on Home Assistan
 service: esphome.entrance_sesame_with_tag
 data:
   is_lock: "{{ not is_state('lock.entrance_lock1', 'locked') }}"
-  tag: "{{ ***Anything*** }}"
+  tag: "***Anything***"
 ```
 
 # Full example configuration file
@@ -351,8 +439,7 @@ If this module seems to be interfering with your WiFi connection, please try the
 ```yaml
 sesame:
   setup_priority: 0
-    :
-    :
+    ⋮
 ```
 
 This setting defers the connection to SESAME until the very end of ESPHome's initialization.
@@ -366,8 +453,7 @@ OLD:
 esphome:
   libraries:
     - https://github.com/homy-newfs8/libsesame3bt#0.16.0
-    :
-    :
+    ⋮
 external_components:
 - source:
     type: git
@@ -394,8 +480,7 @@ NEW:
 esphome:
   libraries:
     - https://github.com/homy-newfs8/libsesame3bt#0.17.0
-    :
-    :
+    ⋮
 external_components:
 - source:
     type: git
