@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.11.0] 2024-09-14
+
+- Support SESAME Bot 2.
+- Add bot keyword for Bot devices.
+
 ## [v0.10.0] 2024-04-29
 
 - Big YAML schema change (see README).

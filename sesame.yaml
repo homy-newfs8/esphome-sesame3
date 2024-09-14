@@ -2,7 +2,7 @@ esphome:
   name: entrance
   friendly_name: Entrance
   libraries:
-  - https://github.com/homy-newfs8/libsesame3bt#0.17.0
+  - https://github.com/homy-newfs8/libsesame3bt#0.18.0
   # - symlink://../../../../../../PlatformIO/Projects/libsesame3bt
   platformio_options:
     build_flags:
@@ -16,9 +16,10 @@ external_components:
 - source:
     type: git
     url: https://github.com/homy-newfs8/esphome-sesame3
-    ref: v0.10.0
+    ref: v0.11.0
   components: [ sesame, sesame_ble ]
 # - source: 'components'
+#   components: [ sesame, sesame_ble ]
 
 esp32:
   board: esp32-c3-devkitm-1
@@ -81,7 +82,6 @@ api:
 button:
 - platform: template
   name: "Run Bot2 Script1"
-  device_class: opening
   on_press:
   - lambda: |-
       id(bot_2).run(0);
