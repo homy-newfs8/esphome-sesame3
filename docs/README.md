@@ -18,7 +18,7 @@ You need to add compiler / library options to ESPHome base configuration, and `e
 ```yaml
 esphome:
   libraries:
-    - https://github.com/homy-newfs8/libsesame3bt#0.17.0
+    - https://github.com/homy-newfs8/libsesame3bt#0.21.0
   platformio_options:
     build_flags:
       - -std=gnu++17 -Wall -Wextra
@@ -38,7 +38,7 @@ external_components:
   - source:
       type: git
       url: https://github.com/homy-newfs8/esphome-sesame3
-      ref: v0.10.0
+      ref: v0.12.0
     components: [ sesame, sesame_ble ]
 ```
 
@@ -479,13 +479,13 @@ NEW:
 ```yaml
 esphome:
   libraries:
-    - https://github.com/homy-newfs8/libsesame3bt#0.17.0
+    - https://github.com/homy-newfs8/libsesame3bt#0.21.0
     ⋮
 external_components:
 - source:
     type: git
     url: https://github.com/homy-newfs8/esphome-sesame3
-    ref: v0.10.0
+    ref: v0.12.0
   components: [ sesame, sesame_ble ]
 
 sesame:

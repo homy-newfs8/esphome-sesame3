@@ -145,9 +145,7 @@ CONFIG_SCHEMA = cv.All(
                         accuracy_decimals=0,
                     ),
                     cv.Optional(CONF_UNKNOWN_STATE_ALTERNATIVE): cv.enum(LOCK_STATES),
-                    cv.Optional(CONF_UNKNOWN_STATE_TIMEOUT, default="20s"): cv.All(
-                        cv.positive_time_period_seconds, cv.Range(max=cv.TimePeriod(seconds=255))
-                    ),
+                    cv.Optional(CONF_UNKNOWN_STATE_TIMEOUT, default="20s"): cv.positive_time_period_milliseconds,
                 }
             ),
             cv.Optional(CONF_BOT): cv.Schema(
@@ -174,7 +172,7 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(CONF_CONNECTION_SENSOR): binary_sensor.binary_sensor_schema(
                 device_class=DEVICE_CLASS_CONNECTIVITY,
             ),
-            cv.Optional(CONF_TIMEOUT, default="10s"): cv.All(cv.positive_time_period_seconds, cv.Range(max=cv.TimePeriod(seconds=255))),
+            cv.Optional(CONF_TIMEOUT, default="10s"): cv.positive_time_period_milliseconds,
             cv.Optional(CONF_ALWAYS_CONNECT, default=True): cv.boolean,
         }
     ).extend(cv.polling_component_schema("never")),
@@ -201,7 +199,7 @@ async def to_code(config):
     if CONF_CONNECT_RETRY_LIMIT in config:
         cg.add(var.set_connect_retry_limit(config[CONF_CONNECT_RETRY_LIMIT]))
     if CONF_TIMEOUT in config:
-        cg.add(var.set_connection_timeout_sec(config[CONF_TIMEOUT].total_seconds))
+        cg.add(var.set_connection_timeout(config[CONF_TIMEOUT].total_milliseconds))
     if CONF_ALWAYS_CONNECT in config:
         cg.add(var.set_always_connect(config[CONF_ALWAYS_CONNECT]))
 
@@ -218,7 +216,7 @@ async def to_code(config):
         if CONF_UNKNOWN_STATE_ALTERNATIVE in lconfig:
             cg.add(lck.set_unknown_state_alternative(lconfig[CONF_UNKNOWN_STATE_ALTERNATIVE]))
         if CONF_UNKNOWN_STATE_TIMEOUT in lconfig:
-            cg.add(lck.set_unknown_state_timeout_sec(lconfig[CONF_UNKNOWN_STATE_TIMEOUT].total_seconds))
+            cg.add(lck.set_unknown_state_timeout(lconfig[CONF_UNKNOWN_STATE_TIMEOUT].total_milliseconds))
         cg.add(var.set_feature(lck))
         cg.add(lck.init())
     if CONF_BOT in config:

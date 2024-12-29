@@ -1,4 +1,5 @@
 #include "bot_feature.h"
+#include <esphome/core/log.h>
 
 using libsesame3bt::Sesame;
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.12.0] 2024-12-30
+
+- Bump NimBLE-Arduino version to 2.1.2
+- Bump libsesame3bt version to 0.21.0
+- Change timeout setting (`connection_timeout`, `unknown_state_timeout`) precision to milliseconds (was seconds)
+
 ## [v0.11.0] 2024-09-14
 
 - Support SESAME Bot 2.

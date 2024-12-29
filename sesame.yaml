@@ -2,8 +2,7 @@ esphome:
   name: entrance
   friendly_name: Entrance
   libraries:
-  - https://github.com/homy-newfs8/libsesame3bt#0.18.0
-  # - symlink://../../../../../../PlatformIO/Projects/libsesame3bt
+  - https://github.com/homy-newfs8/libsesame3bt#0.21.0
   platformio_options:
     build_flags:
     - -std=gnu++17 -Wall -Wextra
@@ -16,7 +15,7 @@ external_components:
 - source:
     type: git
     url: https://github.com/homy-newfs8/esphome-sesame3
-    ref: v0.11.0
+    ref: v0.12.0
   components: [ sesame, sesame_ble ]
 # - source: 'components'
 #   components: [ sesame, sesame_ble ]
@@ -201,12 +200,12 @@ sesame:
 #     name: Lock3
 #   battery_pct:
 #     name: "Lock3_battery_level"
-- id: bot2
-  model: sesame_bot_2
-  address: !secret bot2_address
-  secret: !secret bot2_secret
-  bot:
-    id: bot_2
+# - id: bot2
+#   model: sesame_bot_2
+#   address: !secret bot2_address
+#   secret: !secret bot2_secret
+#   bot:
+#     id: bot_2
 
 ## Use below definitions only for discovering your SESAME BT Addresses.
 # sesame_ble:

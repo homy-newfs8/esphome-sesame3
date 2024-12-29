@@ -28,7 +28,7 @@ class SesameComponent : public PollingComponent {
 	void set_battery_voltage_sensor(sensor::Sensor* sensor) { voltage_sensor = sensor; }
 	void set_connection_sensor(binary_sensor::BinarySensor* sensor) { connection_sensor = sensor; }
 	void set_connect_retry_limit(uint16_t retry_limit) { connect_limit = retry_limit; }
-	void set_connection_timeout_sec(uint8_t timeout) { connection_timeout_sec = timeout; }
+	void set_connection_timeout(uint32_t timeout) { connection_timeout = timeout; }
 	void set_feature(Feature* feature) { this->feature = feature; }
 	void set_always_connect(bool always) { this->always_connect = always; }
 	virtual float get_setup_priority() const override { return setup_priority::AFTER_WIFI; };
@@ -48,7 +48,7 @@ class SesameComponent : public PollingComponent {
 	state_t my_state = state_t::not_connected;
 	uint16_t connect_limit = 0;
 	uint16_t connect_tried = 0;
-	uint8_t connection_timeout_sec = 10;
+	uint32_t connection_timeout = 10'000;
 	bool always_connect = true;
 	union {
 		uint8_t value;

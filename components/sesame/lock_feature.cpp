@@ -1,5 +1,6 @@
 #include "lock_feature.h"
 #include <esphome/core/hal.h>
+#include <esphome/core/log.h>
 #include "sesame_component.h"
 
 using esphome::lock::LockState;
@@ -53,7 +54,7 @@ SesameLock::test_unknown_state() {
 			auto now = esphome::millis();
 			if (unknown_state_started == 0) {
 				unknown_state_started = now;
-			} else if (unknown_state_timeout_sec && now - unknown_state_started > unknown_state_timeout_sec * 1000) {
+			} else if (unknown_state_timeout && now - unknown_state_started > unknown_state_timeout) {
 				reflect_status_changed();
 				unknown_state_started = 0;
 			}

@@ -1,5 +1,6 @@
 #include "sesame_component.h"
 #include <esphome/core/application.h>
+#include <esphome/core/log.h>
 
 namespace {
 
@@ -42,7 +43,7 @@ SesameComponent::init(model_t model, const char* pubkey, const char* secret, con
 		mark_failed();
 		return;
 	}
-	sesame.set_connect_timeout_sec(connection_timeout_sec);
+	sesame.set_connect_timeout(connection_timeout);
 	if (!sesame.begin(BLEAddress(btaddr, BLE_ADDR_RANDOM), model)) {
 		ESP_LOGE(TAG, "Failed to SesameClient::begin. May be unsupported model.");
 		mark_failed();
@@ -129,7 +130,7 @@ SesameComponent::loop() {
 			}
 			break;
 		case state_t::connecting:
-			if (now - state_started > connection_timeout_sec * 1000 + CONNECT_STATE_TIMEOUT_MARGIN) {
+			if (now - state_started > connection_timeout + CONNECT_STATE_TIMEOUT_MARGIN) {
 				ESP_LOGE(TAG, "Connect attempt not finished within expected time, reboot after %u secs", REBOOT_DELAY_SEC);
 				set_state(state_t::wait_reboot);
 				break;

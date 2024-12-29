@@ -28,7 +28,7 @@ class SesameLock : public lock::Lock, public Feature {
 	void set_history_tag_sensor(text_sensor::TextSensor* sensor) { history_tag_sensor = sensor; }
 	void set_history_type_sensor(sensor::Sensor* sensor) { history_type_sensor = sensor; }
 	void set_unknown_state_alternative(lock::LockState alternative) { unknown_state_alternative = alternative; }
-	void set_unknown_state_timeout_sec(uint8_t sec) { unknown_state_timeout_sec = sec; }
+	void set_unknown_state_timeout(uint32_t timeout) { unknown_state_timeout = timeout; }
 	virtual void loop() override;
 	virtual void publish_initial_state() override;
 	virtual void reflect_status_changed() override;
@@ -46,7 +46,7 @@ class SesameLock : public lock::Lock, public Feature {
 	lock::LockState lock_state = lock::LockState::LOCK_STATE_NONE;
 	lock::LockState unknown_state_alternative = lock::LockState::LOCK_STATE_NONE;
 	uint32_t unknown_state_started = 0;
-	uint8_t unknown_state_timeout_sec = 20;
+	uint32_t unknown_state_timeout = 20'000;
 
 	virtual void control(const lock::LockCall& call) override;
 	virtual void open_latch() override;
