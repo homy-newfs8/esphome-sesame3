@@ -1,6 +1,6 @@
 # esphome-sesame3
 
-[ESPHome](https://esphome.io/) Smart Lock component for CANDYHOUSE [SESAME 5](https://jp.candyhouse.co/products/sesame5) / [SESAME 5 PRO](https://jp.candyhouse.co/products/sesame5-pro) / [SESAME Bot 2](https://jp.candyhouse.co/products/sesamebot2) / SESAME bot / SESAME 3 / SESAME 4 / SESAME Bike, control via Bluetooth LE
+[ESPHome](https://esphome.io/) Smart Lock component for CANDY HOUSE [SESAME 5](https://jp.candyhouse.co/products/sesame5) / [SESAME 5 PRO](https://jp.candyhouse.co/products/sesame5-pro) / [SESAME Bot 2](https://jp.candyhouse.co/products/sesamebot2) / SESAME bot / SESAME 3 / SESAME 4 / SESAME Bike, control via Bluetooth LE
 
 > [!NOTE] This component does not use ESPHome's built-in `BTClient`
 > functionality. Therefore, this component cannot coexist with other BLE
@@ -17,8 +17,6 @@ You need to add compiler / library options to ESPHome base configuration, and `e
 
 ```yaml
 esphome:
-  libraries:
-    - https://github.com/homy-newfs8/libsesame3bt#0.21.0
   platformio_options:
     build_flags:
       - -std=gnu++17 -Wall -Wextra
@@ -38,7 +36,7 @@ external_components:
   - source:
       type: git
       url: https://github.com/homy-newfs8/esphome-sesame3
-      ref: v0.12.0
+      ref: v0.13.0
     components: [ sesame, sesame_ble ]
 ```
 

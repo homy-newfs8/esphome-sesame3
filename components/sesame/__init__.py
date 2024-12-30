@@ -228,3 +228,4 @@ async def to_code(config):
         cg.add(var.set_feature(bot))
         cg.add(bot.init())
     cg.add(var.init(config[CONF_MODEL], config.get(CONF_PUBLIC_KEY), config[CONF_SECRET], str(config[CONF_ADDRESS])))
+    cg.add_library(None, None, "https://github.com/homy-newfs8/libsesame3bt#0.21.0")

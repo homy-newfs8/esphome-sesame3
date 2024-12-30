@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.13.0] 2024-12-30
+
+- Auto import libsesamebt3 library
+
 ## [v0.12.0] 2024-12-30
 
 - Bump NimBLE-Arduino version to 2.1.2

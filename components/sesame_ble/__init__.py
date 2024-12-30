@@ -3,7 +3,6 @@ import esphome.config_validation as cv
 from esphome.components import esp32_ble_tracker
 from esphome.const import CONF_ID
 
-AUTO_LOAD = ["esp32_ble_tracker"]
 DEPENDENCIES = ["esp32_ble_tracker"]
 
 sesame_ble_ns = cg.esphome_ns.namespace("sesame_ble")
@@ -19,3 +18,4 @@ CONFIG_SCHEMA = cv.Schema(
 async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
     await esp32_ble_tracker.register_ble_device(var, config)
+    cg.add_library(None, None, "https://github.com/homy-newfs8/libsesame3bt#0.21.0")
