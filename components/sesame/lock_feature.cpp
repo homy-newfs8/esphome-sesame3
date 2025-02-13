@@ -155,7 +155,7 @@ SesameLock::update_lock_state(lock::LockState new_state) {
 		return;
 	}
 	lock_state = new_state;
-	if (lock_state != LockState::LOCK_STATE_NONE && handle_history()) {
+	if (lock_state != LockState::LOCK_STATE_NONE && lock_state != LockState::LOCK_STATE_JAMMED && handle_history()) {
 		if (parent_->sesame.request_history()) {
 			last_history_requested = millis();
 		} else {
