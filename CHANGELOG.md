@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.14.0-pre]
+
+- Handle request history timeout properly
+- Clear Jam detecting flag properly
+
 ## [v0.13.0] 2024-12-30
 
 - Auto import libsesamebt3 library

@@ -40,6 +40,7 @@ SesameLock::init() {
 			recv_history_tag.assign(history.tag, history.tag_len);
 			ESP_LOGD(TAG, "hist: type=%u, str=(%u)%.*s", static_cast<uint8_t>(history.type), history.tag_len, history.tag_len,
 			         history.tag);
+			last_history_requested = 0;
 			parent_->set_timeout(0, [this]() { publish_lock_history_state(); });
 		});
 	}
@@ -144,6 +145,7 @@ SesameLock::reflect_status_changed() {
 		}
 		return;
 	}
+	jam_detection_started = 0;
 	update_lock_state(new_lock_state);
 }
 
@@ -154,7 +156,9 @@ SesameLock::update_lock_state(lock::LockState new_state) {
 	}
 	lock_state = new_state;
 	if (lock_state != LockState::LOCK_STATE_NONE && handle_history()) {
-		if (!parent_->sesame.request_history()) {
+		if (parent_->sesame.request_history()) {
+			last_history_requested = millis();
+		} else {
 			ESP_LOGW(TAG, "Failed to request history");
 			publish_lock_state();
 		}
