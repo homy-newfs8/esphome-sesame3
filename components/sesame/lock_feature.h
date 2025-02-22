@@ -40,7 +40,7 @@ class SesameLock : public lock::Lock, public Feature {
 	uint32_t last_history_requested = 0;
 	text_sensor::TextSensor* history_tag_sensor = nullptr;
 	sensor::Sensor* history_type_sensor = nullptr;
-	libsesame3bt::Sesame::history_type_t recv_history_type;
+	libsesame3bt::Sesame::history_type_t recv_history_type = libsesame3bt::Sesame::history_type_t::none;
 	std::string recv_history_tag;
 	const char* default_history_tag = "";
 	lock::LockState lock_state = lock::LockState::LOCK_STATE_NONE;
@@ -57,6 +57,7 @@ class SesameLock : public lock::Lock, public Feature {
 	void publish_lock_state(bool force_publish = false);
 	void update_lock_state(lock::LockState);
 	void publish_lock_history_state();
+	bool history_type_matched(lock::LockState, libsesame3bt::Sesame::history_type_t);
 };
 
 }  // namespace sesame_lock

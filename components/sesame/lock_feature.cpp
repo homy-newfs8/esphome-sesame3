@@ -12,7 +12,7 @@ namespace {
 
 constexpr uint32_t OPERATION_TIMEOUT = 3'000;
 constexpr uint32_t JAMM_DETECTION_TIMEOUT = 3'000;
-constexpr uint32_t HISTORY_TIMEOUT = 3'000;
+constexpr uint32_t HISTORY_TIMEOUT = 4'000;
 
 }  // namespace
 
@@ -36,12 +36,23 @@ SesameLock::init() {
 	if (handle_history()) {
 		recv_history_tag.reserve(SesameClient::MAX_CMD_TAG_SIZE + 1);
 		parent_->sesame.set_history_callback([this](auto& client, const auto& history) {
-			recv_history_type = history.type;
-			recv_history_tag.assign(history.tag, history.tag_len);
-			ESP_LOGD(TAG, "hist: type=%u, str=(%u)%.*s", static_cast<uint8_t>(history.type), history.tag_len, history.tag_len,
-			         history.tag);
-			last_history_requested = 0;
-			parent_->set_timeout(0, [this]() { publish_lock_history_state(); });
+			ESP_LOGD(TAG, "hist: r=%u, id=%d, type=%u, str=(%u)%.*s", history.result, history.record_id,
+			         static_cast<uint8_t>(history.type), history.tag_len, history.tag_len, history.tag);
+			if (history.result == Sesame::result_code_t::success) {
+				recv_history_type = history.type;
+				recv_history_tag.assign(history.tag, history.tag_len);
+				if (last_history_requested > 0 && history_type_matched(lock_state, recv_history_type)) {
+					last_history_requested = 0;
+					parent_->set_timeout(0, [this]() { publish_lock_history_state(); });
+					return;
+				}
+			}
+			if (last_history_requested > 0) {
+				parent_->set_timeout(300, [this]() {
+					parent_->sesame.request_history();
+					ESP_LOGD(TAG, "re request history");
+				});
+			}
 		});
 	}
 }
@@ -127,13 +138,13 @@ SesameLock::reflect_status_changed() {
 		update_lock_state(LockState::LOCK_STATE_NONE);
 		return;
 	}
-	lock::LockState new_lock_state;
 	if (sesame_status->in_lock() && sesame_status->in_unlock()) {
 		if (!jam_detection_started && lock_state != LockState::LOCK_STATE_JAMMED) {
 			jam_detection_started = esphome::millis();
 		}
 		return;
 	}
+	lock::LockState new_lock_state;
 	if (sesame_status->in_unlock()) {
 		new_lock_state = lock::LOCK_STATE_UNLOCKED;
 	} else if (sesame_status->in_lock()) {
@@ -157,18 +168,21 @@ SesameLock::update_lock_state(lock::LockState new_state) {
 	lock_state = new_state;
 	if (lock_state != LockState::LOCK_STATE_NONE && lock_state != LockState::LOCK_STATE_JAMMED && handle_history()) {
 		if (parent_->sesame.request_history()) {
+			ESP_LOGD(TAG, "history requested");
 			last_history_requested = millis();
 		} else {
 			ESP_LOGW(TAG, "Failed to request history");
 			publish_lock_state();
 		}
 	} else {
+		ESP_LOGD(TAG, "non final state publish");
 		publish_lock_state();
 	}
 }
 
 void
 SesameLock::publish_lock_history_state() {
+	ESP_LOGD(TAG, "final state publish");
 	if (history_type_sensor) {
 		history_type_sensor->publish_state(static_cast<uint8_t>(recv_history_type));
 	}
@@ -176,6 +190,28 @@ SesameLock::publish_lock_history_state() {
 		history_tag_sensor->publish_state(recv_history_tag);
 	}
 	publish_lock_state();
+}
+
+static bool
+is_lock_type(Sesame::history_type_t type) {
+	using h = Sesame::history_type_t;
+	return type == h::autolock || type == h::manual_locked || type == h::ble_lock || type == h::wm2_lock || type == h::web_lock;
+}
+
+static bool
+is_unlock_type(Sesame::history_type_t type) {
+	using h = Sesame::history_type_t;
+	return type == h::manual_unlocked || type == h::ble_unlock || type == h::wm2_unlock || type == h::web_unlock;
+}
+
+bool
+SesameLock::history_type_matched(lock::LockState state, Sesame::history_type_t type) {
+	if (state == lock::LOCK_STATE_LOCKED) {
+		return is_lock_type(type);
+	} else if (state == lock::LOCK_STATE_UNLOCKED) {
+		return is_unlock_type(type);
+	}
+	return false;
 }
 
 void

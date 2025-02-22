@@ -56,6 +56,8 @@ SesameComponent::init(model_t model, const char* pubkey, const char* secret, con
 	}
 	sesame.set_state_callback([this](auto& client, auto state) { sesame_state = state; });
 	sesame.set_status_callback([this](auto& client, auto status) {
+		ESP_LOGD(TAG, "Status in_lock=%u,in_unlock=%u,tgt=%d,pos=%d,ret=%u", status.in_lock(), status.in_unlock(), status.target(),
+		         status.position(), status.ret_code());
 		sesame_status = status;
 		set_timeout(0, [this]() {
 			reflect_sesame_status();
