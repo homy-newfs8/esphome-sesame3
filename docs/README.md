@@ -289,8 +289,8 @@ History is Lock specific feature, so define these sensors under `lock:` object.
 |     7 | MANUAL_LOCKED         | By hand                                                        |
 |     8 | MANUAL_UNLOCKED       | By hand                                                        |
 |     9 | MANUAL_ELSE           |                                                                |
-|    10 | DRIVE_LOCKED          | SESAME bot                                                     |
-|    11 | DRIVE_UNLOCKED        | SESAME bot                                                     |
+|    10 | DRIVE_LOCKED          | SESAME bot / SESAME 4                                          |
+|    11 | DRIVE_UNLOCKED        | SESAME bot / SESAME 4                                          |
 |    12 | DRIVE_FAILED          |                                                                |
 |    13 | BLE_ADV_PARAM_UPDATED |                                                                |
 |    14 | WM2_LOCK              | By smartphone app (via Wi-Fi Module 2)                         |

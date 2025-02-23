@@ -195,13 +195,15 @@ SesameLock::publish_lock_history_state() {
 static bool
 is_lock_type(Sesame::history_type_t type) {
 	using h = Sesame::history_type_t;
-	return type == h::autolock || type == h::manual_locked || type == h::ble_lock || type == h::wm2_lock || type == h::web_lock;
+	return type == h::autolock || type == h::manual_locked || type == h::ble_lock || type == h::wm2_lock || type == h::web_lock ||
+	       type == h::drive_locked;
 }
 
 static bool
 is_unlock_type(Sesame::history_type_t type) {
 	using h = Sesame::history_type_t;
-	return type == h::manual_unlocked || type == h::ble_unlock || type == h::wm2_unlock || type == h::web_unlock;
+	return type == h::manual_unlocked || type == h::ble_unlock || type == h::wm2_unlock || type == h::web_unlock ||
+	       type == h::drive_unlocked;
 }
 
 bool
