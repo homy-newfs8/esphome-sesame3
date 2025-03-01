@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.14.0] 2025-03-01
+
+- SESAME Locks history retrieval sequence changed
+- SESAME bot (not Bot2) history and status handling improved
+- Properly handle JAM detection timeout (SESAME 3/4)
+- Documentation modification to README History type table
+  - DRIVE_LOCKED/DRIVE_UNLOCKED was observed on SESAME 4
+  - Added BLE_CLICK
+
 ## [v0.13.0] 2024-12-30
 
 - Auto import libsesamebt3 library
