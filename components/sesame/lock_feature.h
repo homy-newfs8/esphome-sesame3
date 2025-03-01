@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Sesame.h>
+#include <SesameClient.h>
 #include <esphome/components/lock/lock.h>
 #include <esphome/components/sensor/sensor.h>
 #include <esphome/components/text_sensor/text_sensor.h>
@@ -36,17 +37,18 @@ class SesameLock : public lock::Lock, public Feature {
  private:
 	SesameComponent* parent_;
 	const char* TAG;
+	const char* default_history_tag = "";
 	uint32_t jam_detection_started = 0;
 	uint32_t last_history_requested = 0;
 	text_sensor::TextSensor* history_tag_sensor = nullptr;
 	sensor::Sensor* history_type_sensor = nullptr;
-	libsesame3bt::Sesame::history_type_t recv_history_type;
+	libsesame3bt::Sesame::history_type_t recv_history_type = libsesame3bt::Sesame::history_type_t::none;
 	std::string recv_history_tag;
-	const char* default_history_tag = "";
 	lock::LockState lock_state = lock::LockState::LOCK_STATE_NONE;
 	lock::LockState unknown_state_alternative = lock::LockState::LOCK_STATE_NONE;
 	uint32_t unknown_state_started = 0;
 	uint32_t unknown_state_timeout = 20'000;
+	bool motor_moved = false;
 
 	virtual void control(const lock::LockCall& call) override;
 	virtual void open_latch() override;
@@ -57,6 +59,10 @@ class SesameLock : public lock::Lock, public Feature {
 	void publish_lock_state(bool force_publish = false);
 	void update_lock_state(lock::LockState);
 	void publish_lock_history_state();
+	bool history_type_matched(lock::LockState, libsesame3bt::Sesame::history_type_t);
+	void clear_history();
+	void handle_bot_history(const libsesame3bt::SesameClient::History& history);
+	bool is_bot1() const;
 };
 
 }  // namespace sesame_lock

@@ -1,24 +1,25 @@
+import string
+
 import esphome.codegen as cg
-import esphome.config_validation as cv
 from esphome.components import binary_sensor, lock, sensor, text_sensor
+import esphome.config_validation as cv
 from esphome.const import (
-    CONF_ID,
     CONF_ADDRESS,
+    CONF_ID,
     CONF_MODEL,
     CONF_TAG,
     CONF_TIMEOUT,
-    UNIT_EMPTY,
-    UNIT_PERCENT,
-    UNIT_VOLT,
     DEVICE_CLASS_BATTERY,
     DEVICE_CLASS_CONNECTIVITY,
     DEVICE_CLASS_EMPTY,
     DEVICE_CLASS_RUNNING,
     DEVICE_CLASS_VOLTAGE,
-    STATE_CLASS_NONE,
     STATE_CLASS_MEASUREMENT,
+    STATE_CLASS_NONE,
+    UNIT_EMPTY,
+    UNIT_PERCENT,
+    UNIT_VOLT,
 )
-import string
 
 AUTO_LOAD = ["sensor", "text_sensor", "binary_sensor", "lock"]
 DEPENDENCIES = ["sensor", "text_sensor", "binary_sensor"]
@@ -228,4 +229,6 @@ async def to_code(config):
         cg.add(var.set_feature(bot))
         cg.add(bot.init())
     cg.add(var.init(config[CONF_MODEL], config.get(CONF_PUBLIC_KEY), config[CONF_SECRET], str(config[CONF_ADDRESS])))
-    cg.add_library(None, None, "https://github.com/homy-newfs8/libsesame3bt#0.21.0")
+    cg.add_library(None, None, "https://github.com/homy-newfs8/libsesame3bt#0.23.0")
+    # cg.add_library(None, None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt")
+    # cg.add_library(None, None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt-core")
