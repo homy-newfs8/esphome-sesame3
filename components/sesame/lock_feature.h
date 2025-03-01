@@ -58,6 +58,7 @@ class SesameLock : public lock::Lock, public Feature {
 	void update_lock_state(lock::LockState);
 	void publish_lock_history_state();
 	bool history_type_matched(lock::LockState, libsesame3bt::Sesame::history_type_t);
+	void clear_history();
 };
 
 }  // namespace sesame_lock

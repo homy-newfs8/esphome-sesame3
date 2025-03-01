@@ -36,7 +36,7 @@ SesameLock::init() {
 	if (handle_history()) {
 		recv_history_tag.reserve(SesameClient::MAX_CMD_TAG_SIZE + 1);
 		parent_->sesame.set_history_callback([this](auto& client, const auto& history) {
-			ESP_LOGD(TAG, "hist: r=%u, id=%d, type=%u, str=(%u)%.*s", history.result, history.record_id,
+			ESP_LOGD(TAG, "hist: r=%u, id=%d, type=%u, str=(%u)%.*s", static_cast<uint8_t>(history.result), history.record_id,
 			         static_cast<uint8_t>(history.type), history.tag_len, history.tag_len, history.tag);
 			if (history.result == Sesame::result_code_t::success) {
 				recv_history_type = history.type;
@@ -79,18 +79,17 @@ SesameLock::test_timeout() {
 	auto now = esphome::millis();
 	if (HISTORY_TIMEOUT) {
 		if (last_history_requested && now - last_history_requested > HISTORY_TIMEOUT) {
-			ESP_LOGW(TAG, "History not received");
-			recv_history_type = Sesame::history_type_t::none;
-			recv_history_tag.clear();
-			publish_lock_history_state();
+			ESP_LOGW(TAG, "History receive timeout");
 			last_history_requested = 0;
+			clear_history();
+			publish_lock_history_state();
 		}
 	}
 	if (JAMM_DETECTION_TIMEOUT) {
 		if (jam_detection_started && now - jam_detection_started > JAMM_DETECTION_TIMEOUT) {
 			ESP_LOGW(TAG, "Locking state not determined too long, treat as jammed");
-			update_lock_state(LockState::LOCK_STATE_JAMMED);
 			jam_detection_started = 0;
+			update_lock_state(LockState::LOCK_STATE_JAMMED);
 		}
 	}
 }
@@ -172,7 +171,8 @@ SesameLock::update_lock_state(lock::LockState new_state) {
 			last_history_requested = millis();
 		} else {
 			ESP_LOGW(TAG, "Failed to request history");
-			publish_lock_state();
+			clear_history();
+			publish_lock_history_state();
 		}
 	} else {
 		ESP_LOGD(TAG, "non final state publish");
@@ -214,6 +214,12 @@ SesameLock::history_type_matched(lock::LockState state, Sesame::history_type_t t
 		return is_unlock_type(type);
 	}
 	return false;
+}
+
+void
+SesameLock::clear_history() {
+	recv_history_type = Sesame::history_type_t::none;
+	recv_history_tag.clear();
 }
 
 void
