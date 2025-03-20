@@ -72,6 +72,7 @@ SesameComponent::setup() {
 	if (feature) {
 		feature->publish_initial_state();
 	}
+	BLEDevice::init("");
 }
 
 void
@@ -203,7 +204,6 @@ SesameComponent::connect_task(void*) {
 		if (!client) {
 			continue;
 		}
-		BLEDevice::init("");
 		client->connect();
 		{
 			std::lock_guard lock{ble_connecting_mux};
