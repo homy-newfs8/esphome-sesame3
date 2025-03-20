@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.14.1] 2025-03-20
+
+- Fix boot loop on ESP32 S3
+
 ## [v0.14.0] 2025-03-01
 
 - SESAME Locks history retrieval sequence changed
