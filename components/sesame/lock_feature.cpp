@@ -28,29 +28,26 @@ SesameLock::SesameLock(SesameComponent* parent, model_t model, const char* tag)
 void
 SesameLock::init() {
 	ESP_LOGD(TAG, "lock init");
-	if (handle_history()) {
+	if (using_history()) {
 		recv_history_tag.reserve(SesameClient::MAX_CMD_TAG_SIZE + 1);
 		parent_->sesame.set_history_callback([this](auto& client, const auto& history) {
 			ESP_LOGD(TAG, "hist: r=%u, id=%d, type=%u, str=(%u)%.*s", static_cast<uint8_t>(history.result), history.record_id,
 			         static_cast<uint8_t>(history.type), history.tag_len, history.tag_len, history.tag);
-			if (parent_->sesame.get_model() == Sesame::model_t::sesame_bot) {
+			if (is_bot1()) {
 				handle_bot_history(history);
 				return;
 			}
 			if (history.result == Sesame::result_code_t::success) {
-				recv_history_type = history.type;
-				recv_history_tag.assign(history.tag, history.tag_len);
+				if (history.type != Sesame::history_type_t::drive_locked && history.type != Sesame::history_type_t::drive_unlocked &&
+				    history.type != Sesame::history_type_t::drive_clicked) {
+					recv_history_type = history.type;
+					recv_history_tag.assign(history.tag, history.tag_len);
+				}
 				if (last_history_requested > 0 && history_type_matched(lock_state, recv_history_type)) {
 					last_history_requested = 0;
 					parent_->set_timeout(0, [this]() { publish_lock_history_state(); });
 					return;
 				}
-			}
-			if (last_history_requested > 0) {
-				parent_->set_timeout(300, [this]() {
-					parent_->sesame.request_history();
-					ESP_LOGD(TAG, "re request history");
-				});
 			}
 		});
 	}
@@ -173,6 +170,23 @@ SesameLock::reflect_status_changed() {
 		update_lock_state(LockState::LOCK_STATE_NONE);
 		return;
 	}
+	if (is_bot1()) {
+		if (sesame_status->motor_status() != Sesame::motor_status_t::idle &&
+		    sesame_status->motor_status() != Sesame::motor_status_t::holding) {
+			motor_moved = true;
+			if (using_history()) {
+				ESP_LOGD(TAG, "History requested for bot");
+				parent_->sesame.request_history();
+			}
+			return;
+		}
+	} else {
+		if (using_history()) {
+			if (!parent_->sesame.request_history()) {
+				ESP_LOGW(TAG, "Failed to request history");
+			}
+		}
+	}
 	if (sesame_status->in_lock() == sesame_status->in_unlock()) {
 		if (!jam_detection_started && lock_state != LockState::LOCK_STATE_JAMMED) {
 			jam_detection_started = esphome::millis();
@@ -180,15 +194,6 @@ SesameLock::reflect_status_changed() {
 		return;
 	}
 	jam_detection_started = 0;
-	if (parent_->sesame.get_model() == Sesame::model_t::sesame_bot && sesame_status->motor_status() != Sesame::motor_status_t::idle &&
-	    sesame_status->motor_status() != Sesame::motor_status_t::holding) {
-		motor_moved = true;
-		if (handle_history()) {
-			ESP_LOGD(TAG, "History requested for bot");
-			parent_->sesame.request_history();
-		}
-		return;
-	}
 	lock::LockState new_lock_state;
 	if (sesame_status->in_unlock()) {
 		new_lock_state = lock::LOCK_STATE_UNLOCKED;
@@ -204,7 +209,7 @@ SesameLock::update_lock_state(lock::LockState new_state) {
 		return;
 	}
 	lock_state = new_state;
-	if (handle_history()) {
+	if (using_history()) {
 		if (lock_state != LockState::LOCK_STATE_NONE && lock_state != LockState::LOCK_STATE_JAMMED) {
 			if (parent_->sesame.request_history()) {
 				ESP_LOGD(TAG, "History requested");
@@ -215,7 +220,7 @@ SesameLock::update_lock_state(lock::LockState new_state) {
 				publish_lock_history_state();
 			}
 		} else {
-			publish_lock_state(is_bot1());
+			publish_lock_history_state();
 		}
 	} else {
 		publish_lock_state(is_bot1());
