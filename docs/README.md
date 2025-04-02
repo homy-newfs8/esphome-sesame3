@@ -79,7 +79,7 @@ sesame:
 
 ## Configuration variables
 
-* **model** (**Required**): Model of SESAME. Use one of: `sesame_5`, `sesame_5_pro`, `sesame_bot_2`, `sesame_touch`, `sesame_touch_pro`, `sesame_4`, `sesame_3`, `sesame_bot`, `sesame_bike`
+* **model** (**Required**): Model of SESAME. Use one of: `sesame_5`, `sesame_5_pro`, `sesame_bot_2`, `sesame_touch`, `sesame_touch_pro`, `remote`, `sesame_4`, `sesame_3`, `sesame_bot`, `sesame_bike`
 * **address** (**Required**, string): See [below](#identify-parameter-values-for-sesame-devices).
 * **secret** (**Required**, string): See [below](#identify-parameter-values-for-sesame-devices).
 * **public_key** (**Required** for SESAME OS2 models, string): See [below](#identify-parameter-values-for-sesame-devices).
@@ -202,7 +202,7 @@ On SESAME OS2 devices (SESAME 3 / SESAME 4 / SESAME bot / SESAME bike), `sk` is 
 
 ### `public_key` (Public key for SESAME OS2 devices)
 
-Public key for encryption. Do not specify this parameter for SESAME OS3 devices (SESAME 5 / SESAME 5 PRO / SESAME Bot 2 / SESAME Touch / SESAME Touch PRO).
+Public key for encryption. Do not specify this parameter for SESAME OS3 devices (SESAME 5 / SESAME 5 PRO / SESAME Bot 2 / SESAME Touch / SESAME Touch PRO / CANDY HOUSE Remote).
 
 On OS2 devices, you can retrieve key value from QR code.
 
@@ -507,7 +507,7 @@ In summary,
 * External component name changed from `sesame_lock` to `sesame`.
 * Definition starts with `sesame:` object.
 * Lock-specific settings have been moved under the `lock:` object.
-* Non-locking devices (such as SESAME Touch) are supported. There is no need to define a `lock:` object for such devices.
+* Non-locking devices (such as SESAME Touch / Remote) are supported. There is no need to define a `lock:` object for such devices.
 
 If you want to control multiple SESAME devices by one ESP32, define multiple `sesame` objects:
 

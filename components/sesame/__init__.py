@@ -71,6 +71,7 @@ SESAME_MODELS = {
     "sesame_touch_pro": SesameModel_t.sesame_touch_pro,
     "sesame_touch": SesameModel_t.sesame_touch,
     "sesame_bot_2": SesameModel_t.sesame_bot_2,
+    "remote": SesameModel_t.remote,
 }
 
 
@@ -79,7 +80,7 @@ def is_os3_model(model):
 
 
 def is_lockable_model(model):
-    return model not in ("open_sensor", "sesame_touch_pro", "sesame_touch", "sesame_bot_2")
+    return model not in ("open_sensor", "sesame_touch_pro", "sesame_touch", "sesame_bot_2", "remote")
 
 
 def is_hex_string(str, valid_len):
