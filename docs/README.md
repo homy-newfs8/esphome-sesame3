@@ -25,7 +25,6 @@ esphome:
       - -DCONFIG_BT_NIMBLE_MAX_CONNECTIONS=4
     build_unflags:
       - -std=gnu++11
-    lib_ldf_mode: 'deep'
 
 esp32:
   board: esp32-c3-devkitm-1
