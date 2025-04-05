@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.15.0] 2025-04-05
+
+- Use NimBLE-Arduino async connection functionality, connecting operation stability improved
+- Incorporate SESAME 4 history retrieval patches (#6)
+
 ## [v0.14.1] 2025-03-20
 
 - Fix boot loop on ESP32 S3
