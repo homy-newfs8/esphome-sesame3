@@ -6,7 +6,7 @@
 namespace {
 
 constexpr uint32_t CONNECT_RETRY_INTERVAL = 3'000;
-constexpr uint32_t CONNECT_STATE_TIMEOUT_MARGIN = 2'000;
+constexpr uint32_t CONNECT_STATE_TIMEOUT_MARGIN = 5'000;
 constexpr uint32_t AUTHENTICATE_TIMEOUT = 5'000;
 constexpr uint32_t REBOOT_DELAY_SEC = 5;
 
@@ -129,14 +129,13 @@ SesameComponent::loop() {
 		case state_t::wait_connect:
 			if (can_connect(this)) {
 				ESP_LOGD(TAG, "Connecting");
+				++connect_tried;
 				if (sesame.connect_async()) {
-					++connect_tried;
 					set_state(state_t::connecting);
 				} else {
-					ESP_LOGW(TAG, "Failed to start connect rc=%d", sesame.get_ble_client()->getLastError());
+					ESP_LOGW(TAG, "Failed to start connect rc=%d", get_last_error());
 					connect_done(this);
 					disconnect();
-					set_state(state_t::not_connected);
 				}
 			}
 			break;
@@ -153,39 +152,32 @@ SesameComponent::loop() {
 				if (sesame.start_authenticate()) {
 					set_state(state_t::authenticating);
 				} else {
-					ESP_LOGW(TAG, "Failed to start authenticate, rc=%d", sesame.get_ble_client()->getLastError());
+					ESP_LOGW(TAG, "Failed to start authenticate, rc=%d", get_last_error());
 					disconnect();
-					set_state(state_t::not_connected);
 				}
 			} else if (sesame.get_state() != SesameClient::state_t::connecting) {
-				ESP_LOGW(TAG, "Failed to connect, rc=%d", sesame.get_ble_client()->getLastError());
+				ESP_LOGW(TAG, "Failed to connect, rc=%d", get_last_error());
 				connect_done(this);
 				disconnect();
-				set_state(state_t::not_connected);
 			}
 			break;
 		case state_t::authenticating:
-			if (sesame.get_state() == SesameClient::state_t::idle || now - state_started > AUTHENTICATE_TIMEOUT) {
-				ESP_LOGW(TAG, "Failed to authenticate");
-				disconnect();
-				break;
-			}
 			if (sesame.get_state() == SesameClient::state_t::active) {
 				connect_tried = 0;
 				last_connect_attempted = 0;
 				set_state(state_t::running);
 				publish_connection_state(true);
 				ESP_LOGI(TAG, "Authenticated");
+			} else if (sesame.get_state() != SesameClient::state_t::authenticating || now - state_started > AUTHENTICATE_TIMEOUT) {
+				ESP_LOGW(TAG, "Failed to authenticate");
+				disconnect();
 			}
 			break;
 		case state_t::running:
 			if (!always_connect && operation_requested.value == 0) {
 				disconnect();
-				break;
-			}
-			if (sesame.get_state() != SesameClient::state_t::active) {
+			} else if (sesame.get_state() != SesameClient::state_t::active) {
 				disconnect();
-				break;
 			}
 			break;
 		case state_t::wait_reboot:

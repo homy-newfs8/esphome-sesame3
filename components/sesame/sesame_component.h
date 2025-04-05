@@ -68,6 +68,7 @@ class SesameComponent : public PollingComponent {
 	void publish_connection_state(bool connected);
 	void disconnect();
 	virtual void update() override;
+	int get_last_error() const { return sesame.get_ble_client() ? sesame.get_ble_client()->getLastError() : -1; }
 
 	static void global_init();
 	static bool enqueue_connect(SesameComponent*);
