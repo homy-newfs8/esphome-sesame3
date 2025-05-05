@@ -56,6 +56,7 @@ CONF_LOCK = "lock"
 CONF_BOT = "bot"
 CONF_RUNNING_SENSOR = "running_sensor"
 CONF_ALWAYS_CONNECT = "always_connect"
+CONF_FAST_NOTIFY = "fast_notify"
 
 SesameModel_t = cg.global_ns.enum("libsesame3bt::Sesame::model_t", True)
 SESAME_MODELS = {
@@ -148,6 +149,7 @@ CONFIG_SCHEMA = cv.All(
                     ),
                     cv.Optional(CONF_UNKNOWN_STATE_ALTERNATIVE): cv.enum(LOCK_STATES),
                     cv.Optional(CONF_UNKNOWN_STATE_TIMEOUT, default="20s"): cv.positive_time_period_milliseconds,
+                    cv.Optional(CONF_FAST_NOTIFY, default=False): cv.boolean,
                 }
             ),
             cv.Optional(CONF_BOT): cv.Schema(
@@ -219,6 +221,8 @@ async def to_code(config):
             cg.add(lck.set_unknown_state_alternative(lconfig[CONF_UNKNOWN_STATE_ALTERNATIVE]))
         if CONF_UNKNOWN_STATE_TIMEOUT in lconfig:
             cg.add(lck.set_unknown_state_timeout(lconfig[CONF_UNKNOWN_STATE_TIMEOUT].total_milliseconds))
+        if CONF_FAST_NOTIFY in lconfig:
+            cg.add(lck.set_fast_notify(lconfig[CONF_FAST_NOTIFY]))
         cg.add(var.set_feature(lck))
         cg.add(lck.init())
     if CONF_BOT in config:
@@ -233,3 +237,4 @@ async def to_code(config):
     cg.add_library(None, None, "https://github.com/homy-newfs8/libsesame3bt#0.24.0")
     # cg.add_library(None, None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt")
     # cg.add_library(None, None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt-core")
+    # cg.add_platformio_option("lib_ldf_mode", "deep")

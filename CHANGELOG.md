@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.16.0] 2025-05-05
+
+- Add `fast_notify` option to `lock` devices.
+
 ## [v0.15.0] 2025-04-05
 
 - Use NimBLE-Arduino async connection functionality, connecting operation stability improved

@@ -209,8 +209,13 @@ SesameLock::update_lock_state(lock::LockState new_state) {
 		return;
 	}
 	lock_state = new_state;
-	if (using_history()) {
-		if (lock_state != LockState::LOCK_STATE_NONE && lock_state != LockState::LOCK_STATE_JAMMED) {
+	if (lock_state == LockState::LOCK_STATE_NONE || lock_state == LockState::LOCK_STATE_JAMMED) {
+		publish_lock_state(is_bot1());
+	} else {
+		if (!using_history() || fast_notify) {
+			publish_lock_state(is_bot1());
+		}
+		if (using_history()) {
 			if (parent_->sesame.request_history()) {
 				ESP_LOGD(TAG, "History requested");
 				last_history_requested = millis();
@@ -219,23 +224,21 @@ SesameLock::update_lock_state(lock::LockState new_state) {
 				clear_history();
 				publish_lock_history_state();
 			}
-		} else {
-			publish_lock_history_state();
 		}
-	} else {
-		publish_lock_state(is_bot1());
 	}
 }
 
 void
 SesameLock::publish_lock_history_state() {
-	if (history_type_sensor) {
-		history_type_sensor->publish_state(static_cast<uint8_t>(recv_history_type));
-	}
 	if (history_tag_sensor) {
 		history_tag_sensor->publish_state(recv_history_tag);
 	}
-	publish_lock_state(is_bot1());
+	if (history_type_sensor) {
+		history_type_sensor->publish_state(static_cast<uint8_t>(recv_history_type));
+	}
+	if (!fast_notify) {
+		publish_lock_state(is_bot1());
+	}
 }
 
 static bool
