@@ -234,7 +234,7 @@ async def to_code(config):
         cg.add(var.set_feature(bot))
         cg.add(bot.init())
     cg.add(var.init(config[CONF_MODEL], config.get(CONF_PUBLIC_KEY), config[CONF_SECRET], str(config[CONF_ADDRESS])))
-    cg.add_library(None, None, "https://github.com/homy-newfs8/libsesame3bt#0.24.0")
+    cg.add_library(None, None, "https://github.com/homy-newfs8/libsesame3bt#0.24.1")
     # cg.add_library(None, None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt")
     # cg.add_library(None, None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt-core")
     # cg.add_platformio_option("lib_ldf_mode", "deep")

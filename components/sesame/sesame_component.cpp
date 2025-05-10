@@ -168,7 +168,9 @@ SesameComponent::loop() {
 				set_state(state_t::running);
 				publish_connection_state(true);
 				ESP_LOGI(TAG, "Authenticated");
-			} else if (sesame.get_state() != SesameClient::state_t::authenticating || now - state_started > AUTHENTICATE_TIMEOUT) {
+			} else if ((sesame.get_state() != SesameClient::state_t::connected &&
+			            sesame.get_state() != SesameClient::state_t::authenticating) ||
+			           now - state_started > AUTHENTICATE_TIMEOUT) {
 				ESP_LOGW(TAG, "Failed to authenticate");
 				disconnect();
 			}

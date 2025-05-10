@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.16.1] 2025-05-10
+
+- Fix connection instability.
+
 ## [v0.16.0] 2025-05-05
 
 - Add `fast_notify` option to `lock` devices.
