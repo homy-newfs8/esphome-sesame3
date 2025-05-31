@@ -10,9 +10,24 @@
 #include "feature.h"
 
 namespace esphome {
+
+namespace sesame_server {
+
+class SesameServerComponent;
+
+}  // namespace sesame_server
+
 namespace sesame_lock {
 
-enum class state_t : int8_t { not_connected, wait_connect, connecting, authenticating, running, wait_reboot };
+enum class state_t : int8_t {
+	not_connected,
+	wait_connect,
+	connecting,
+	authenticating,
+	running,
+	wait_reboot,
+	wait_server_disconnect
+};
 
 class SesameLock;
 class BotFeature;
@@ -33,10 +48,13 @@ class SesameComponent : public PollingComponent {
 	void set_feature(Feature* feature) { this->feature = feature; }
 	void set_always_connect(bool always) { this->always_connect = always; }
 	virtual float get_setup_priority() const override { return setup_priority::AFTER_WIFI; };
+	void set_sesame_server(sesame_server::SesameServerComponent* server) { this->server = server; }
+	virtual void update() override;
 
  private:
 	libsesame3bt::SesameClient sesame;
 	std::optional<libsesame3bt::SesameClient::Status> sesame_status;
+	NimBLEAddress ble_address;
 	uint32_t last_connect_attempted = 0;
 	uint32_t state_started = 0;
 	std::string log_tag_string;
@@ -45,6 +63,7 @@ class SesameComponent : public PollingComponent {
 	sensor::Sensor* voltage_sensor = nullptr;
 	Feature* feature = nullptr;
 	binary_sensor::BinarySensor* connection_sensor = nullptr;
+	sesame_server::SesameServerComponent* server = nullptr;
 	state_t my_state = state_t::not_connected;
 	uint16_t connect_limit = 0;
 	uint16_t connect_tried = 0;
@@ -67,7 +86,6 @@ class SesameComponent : public PollingComponent {
 	void reflect_sesame_status();
 	void publish_connection_state(bool connected);
 	void disconnect();
-	virtual void update() override;
 	int get_last_error() const { return sesame.get_ble_client() ? sesame.get_ble_client()->getLastError() : -1; }
 
 	static void global_init();

@@ -45,7 +45,7 @@ SesameLock::init() {
 				}
 				if (last_history_requested > 0 && history_type_matched(lock_state, recv_history_type)) {
 					last_history_requested = 0;
-					parent_->set_timeout(0, [this]() { publish_lock_history_state(); });
+					parent_->defer([this]() { publish_lock_history_state(); });
 					return;
 				}
 			}
@@ -81,13 +81,13 @@ SesameLock::handle_bot_history(const SesameClient::History& history) {
 		}
 		if (last_history_requested > 0) {
 			last_history_requested = 0;
-			parent_->set_timeout(0, [this]() { publish_lock_history_state(); });
+			parent_->defer([this]() { publish_lock_history_state(); });
 			return;
 		}
 	} else if (history.result == Sesame::result_code_t::not_found) {
 		if (last_history_requested > 0) {
 			last_history_requested = 0;
-			parent_->set_timeout(0, [this]() { publish_lock_history_state(); });
+			parent_->defer([this]() { publish_lock_history_state(); });
 			return;
 		}
 	} else {

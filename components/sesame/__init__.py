@@ -20,6 +20,11 @@ from esphome.const import (
     UNIT_PERCENT,
     UNIT_VOLT,
 )
+import esphome.final_validate as fv
+import esphome.core as core
+import esphome.config as esp_config
+from esphome.cpp_generator import MockObjClass
+
 
 AUTO_LOAD = ["sensor", "text_sensor", "binary_sensor", "lock"]
 DEPENDENCIES = ["sensor", "text_sensor", "binary_sensor"]
@@ -42,6 +47,9 @@ SesameComponent = sesame_lock_ns.class_("SesameComponent", cg.PollingComponent)
 SesameLock = sesame_lock_ns.class_("SesameLock", lock.Lock)
 BotFeature = sesame_lock_ns.class_("BotFeature")
 
+sesame_server_ns = cg.esphome_ns.namespace("sesame_server")
+SesameServerComponent = sesame_server_ns.class_("SesameServerComponent")
+
 CONF_PUBLIC_KEY = "public_key"
 CONF_SECRET = "secret"
 CONF_BATTERY_PCT = "battery_pct"
@@ -57,6 +65,7 @@ CONF_BOT = "bot"
 CONF_RUNNING_SENSOR = "running_sensor"
 CONF_ALWAYS_CONNECT = "always_connect"
 CONF_FAST_NOTIFY = "fast_notify"
+CONF_SERVER_ID = "server_id"
 
 SesameModel_t = cg.global_ns.enum("libsesame3bt::Sesame::model_t", True)
 SESAME_MODELS = {
@@ -82,6 +91,32 @@ def is_os3_model(model):
 
 def is_lockable_model(model):
     return model not in ("open_sensor", "sesame_touch_pro", "sesame_touch", "sesame_bot_2", "remote")
+
+
+def is_connectable_trigger_mode(model):
+    return model in ("sesame_touch_pro", "sesame_touch", "remote")
+
+
+def add_sesame_server_references(config: esp_config.Config):
+    """Add a reference to the Sesame server component if it exists in the config."""
+    if not is_connectable_trigger_mode(config[CONF_MODEL]):
+        return
+    server_id = None
+    for id, _ in esp_config.iter_ids(fv.full_config.get()):
+        if id is None or not isinstance(id.type, MockObjClass):
+            continue
+        if id.is_declaration and id.type.inherits_from(SesameServerComponent):
+            if server_id is not None:
+                raise cv.Invalid("Only one Sesame server can be defined in the configuration")
+            server_id = id
+    if server_id is None:
+        return
+    if config[CONF_ALWAYS_CONNECT]:
+        raise cv.Invalid("If SESAME Server co-exists in this device, `always_connect` must be False for Sesame Touch Pro / Sesame Touch / Remote")
+    config[CONF_SERVER_ID] = core.ID(server_id.id, False, SesameServerComponent, False)
+
+
+FINAL_VALIDATE_SCHEMA = add_sesame_server_references
 
 
 def is_hex_string(str, valid_len):
@@ -136,7 +171,7 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(CONF_PUBLIC_KEY, default=""): cv.string,
             cv.Required(CONF_SECRET): valid_hexstring(CONF_SECRET, 32),
             cv.Required(CONF_ADDRESS): cv.mac_address,
-            cv.Optional(CONF_LOCK): lock.LOCK_SCHEMA.extend(
+            cv.Optional(CONF_LOCK): lock.lock_schema().extend(
                 {
                     cv.GenerateID(): cv.declare_id(SesameLock),
                     cv.Optional(CONF_TAG, default="ESPHome"): cv.string,
@@ -206,6 +241,9 @@ async def to_code(config):
         cg.add(var.set_connection_timeout(config[CONF_TIMEOUT].total_milliseconds))
     if CONF_ALWAYS_CONNECT in config:
         cg.add(var.set_always_connect(config[CONF_ALWAYS_CONNECT]))
+    if CONF_SERVER_ID in config:
+        server = await cg.get_variable(config[CONF_SERVER_ID])
+        cg.add(var.set_sesame_server(server))
 
     if CONF_LOCK in config:
         lconfig = config[CONF_LOCK]
@@ -234,7 +272,8 @@ async def to_code(config):
         cg.add(var.set_feature(bot))
         cg.add(bot.init())
     cg.add(var.init(config[CONF_MODEL], config.get(CONF_PUBLIC_KEY), config[CONF_SECRET], str(config[CONF_ADDRESS])))
-    cg.add_library(None, None, "https://github.com/homy-newfs8/libsesame3bt#0.24.1")
-    # cg.add_library(None, None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt")
-    # cg.add_library(None, None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt-core")
+    cg.add_library("libsesame3bt", None, "https://github.com/homy-newfs8/libsesame3bt#0.24.2")
+    # cg.add_library("libsesame3bt", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt")
+    # cg.add_library("libsesame3bt-core", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt-core")
+    # cg.add_library("libsesame3bt-server", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt-server")
     # cg.add_platformio_option("lib_ldf_mode", "deep")
