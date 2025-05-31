@@ -14,7 +14,7 @@ class SesameServerComponent {
 	bool has_trigger(const NimBLEAddress& address) const { return false; }
 	void start_advertising() {}
 	void stop_advertising() {}
-}
+};
 
 }  // namespace esphome::sesame_server
 #endif

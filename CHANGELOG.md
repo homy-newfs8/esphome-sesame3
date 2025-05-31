@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.17.0] 2025-05-31
+- Make `update()` callable from lambda (was mistakenly made private).
+- Improved compatibility with [esphome-sesame_server](https://github.com/homy-newfs8/esphome-sesame_server).
+  You can now connect to SESAME Touch/Remote devices registered on the server.
+- When using dual-role, use [esphome-sesame_server](https://github.com/homy-newfs8/esphome-sesame_server) v0.2.0 or later.
+
 ## [v0.16.1] 2025-05-10
 
 - Fix connection instability.
