@@ -40,6 +40,7 @@ SesameLock::init() {
 			if (history.result == Sesame::result_code_t::success) {
 				if (history.type != Sesame::history_type_t::drive_locked && history.type != Sesame::history_type_t::drive_unlocked &&
 				    history.type != Sesame::history_type_t::drive_clicked) {
+					recv_trigger_type = history.trigger_type;
 					recv_history_type = history.type;
 					recv_history_tag.assign(history.tag, history.tag_len);
 				}
@@ -76,6 +77,7 @@ SesameLock::handle_bot_history(const SesameClient::History& history) {
 		if (history.type == Sesame::history_type_t::drive_locked || history.type == Sesame::history_type_t::drive_unlocked ||
 		    history.type == Sesame::history_type_t::drive_clicked) {
 		} else {
+			recv_trigger_type = history.trigger_type;
 			recv_history_type = history.type;
 			recv_history_tag.assign(history.tag, history.tag_len);
 		}
@@ -233,6 +235,9 @@ SesameLock::publish_lock_history_state() {
 	if (history_tag_sensor) {
 		history_tag_sensor->publish_state(recv_history_tag);
 	}
+	if (trigger_type_sensor) {
+		trigger_type_sensor->publish_state(recv_trigger_type.has_value() ? static_cast<uint8_t>(*recv_trigger_type) : NAN);
+	}
 	if (history_type_sensor) {
 		history_type_sensor->publish_state(static_cast<uint8_t>(recv_history_type));
 	}
@@ -267,6 +272,7 @@ SesameLock::history_type_matched(lock::LockState state, Sesame::history_type_t t
 
 void
 SesameLock::clear_history() {
+	recv_trigger_type = std::nullopt;
 	recv_history_type = Sesame::history_type_t::none;
 	recv_history_tag.clear();
 }

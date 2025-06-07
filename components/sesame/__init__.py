@@ -1,7 +1,9 @@
 import string
 
+from esphome import core
 import esphome.codegen as cg
 from esphome.components import binary_sensor, lock, sensor, text_sensor
+import esphome.config as esp_config
 import esphome.config_validation as cv
 from esphome.const import (
     CONF_ADDRESS,
@@ -20,11 +22,8 @@ from esphome.const import (
     UNIT_PERCENT,
     UNIT_VOLT,
 )
-import esphome.final_validate as fv
-import esphome.core as core
-import esphome.config as esp_config
 from esphome.cpp_generator import MockObjClass
-
+import esphome.final_validate as fv
 
 AUTO_LOAD = ["sensor", "text_sensor", "binary_sensor", "lock"]
 DEPENDENCIES = ["sensor", "text_sensor", "binary_sensor"]
@@ -56,6 +55,7 @@ CONF_BATTERY_PCT = "battery_pct"
 CONF_BATTERY_VOLTAGE = "battery_voltage"
 CONF_HISTORY_TAG = "history_tag"
 CONF_HISTORY_TYPE = "history_type"
+CONF_TRIGGER_TYPE = "trigger_type"
 CONF_CONNECT_RETRY_LIMIT = "connect_retry_limit"
 CONF_UNKNOWN_STATE_ALTERNATIVE = "unknown_state_alternative"
 CONF_CONNECTION_SENSOR = "connection_sensor"
@@ -82,6 +82,8 @@ SESAME_MODELS = {
     "sesame_touch": SesameModel_t.sesame_touch,
     "sesame_bot_2": SesameModel_t.sesame_bot_2,
     "remote": SesameModel_t.remote,
+    "sesame_face_pro": SesameModel_t.sesame_face_pro,
+    "sesame_face": SesameModel_t.sesame_face,
 }
 
 
@@ -90,11 +92,11 @@ def is_os3_model(model):
 
 
 def is_lockable_model(model):
-    return model not in ("open_sensor", "sesame_touch_pro", "sesame_touch", "sesame_bot_2", "remote")
+    return model not in ("open_sensor", "sesame_touch_pro", "sesame_touch", "sesame_bot_2", "remote", "sesame_face_pro", "sesame_face")
 
 
 def is_connectable_trigger_mode(model):
-    return model in ("sesame_touch_pro", "sesame_touch", "remote")
+    return model in ("sesame_touch_pro", "sesame_touch", "remote", "sesame_face_pro", "sesame_face")
 
 
 def add_sesame_server_references(config: esp_config.Config):
@@ -182,6 +184,12 @@ CONFIG_SCHEMA = cv.All(
                         state_class=STATE_CLASS_NONE,
                         accuracy_decimals=0,
                     ),
+                    cv.Optional(CONF_TRIGGER_TYPE): sensor.sensor_schema(
+                        unit_of_measurement=UNIT_EMPTY,
+                        device_class=DEVICE_CLASS_EMPTY,
+                        state_class=STATE_CLASS_NONE,
+                        accuracy_decimals=0,
+                    ),
                     cv.Optional(CONF_UNKNOWN_STATE_ALTERNATIVE): cv.enum(LOCK_STATES),
                     cv.Optional(CONF_UNKNOWN_STATE_TIMEOUT, default="20s"): cv.positive_time_period_milliseconds,
                     cv.Optional(CONF_FAST_NOTIFY, default=False): cv.boolean,
@@ -255,6 +263,9 @@ async def to_code(config):
         if CONF_HISTORY_TYPE in lconfig:
             s = await sensor.new_sensor(lconfig[CONF_HISTORY_TYPE])
             cg.add(lck.set_history_type_sensor(s))
+        if CONF_TRIGGER_TYPE in lconfig:
+            s = await sensor.new_sensor(lconfig[CONF_TRIGGER_TYPE])
+            cg.add(lck.set_trigger_type_sensor(s))
         if CONF_UNKNOWN_STATE_ALTERNATIVE in lconfig:
             cg.add(lck.set_unknown_state_alternative(lconfig[CONF_UNKNOWN_STATE_ALTERNATIVE]))
         if CONF_UNKNOWN_STATE_TIMEOUT in lconfig:
@@ -272,8 +283,8 @@ async def to_code(config):
         cg.add(var.set_feature(bot))
         cg.add(bot.init())
     cg.add(var.init(config[CONF_MODEL], config.get(CONF_PUBLIC_KEY), config[CONF_SECRET], str(config[CONF_ADDRESS])))
-    cg.add_library("libsesame3bt", None, "https://github.com/homy-newfs8/libsesame3bt#0.24.2")
-    # cg.add_library("libsesame3bt", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt")
+    # cg.add_library("libsesame3bt", None, "https://github.com/homy-newfs8/libsesame3bt#0.25.0")
+    cg.add_library("libsesame3bt", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt")
     # cg.add_library("libsesame3bt-core", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt-core")
     # cg.add_library("libsesame3bt-server", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt-server")
-    # cg.add_platformio_option("lib_ldf_mode", "deep")
+    cg.add_platformio_option("lib_ldf_mode", "deep")
