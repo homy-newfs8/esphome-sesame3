@@ -13,7 +13,7 @@ external_components:
 - source:
     type: git
     url: https://github.com/homy-newfs8/esphome-sesame3
-    ref: v0.17.0
+    ref: v0.18.0
   components: [ sesame, sesame_ble ]
 # - source: 'components'
 #   components: [ sesame, sesame_ble ]
@@ -198,12 +198,12 @@ sesame:
 #     name: Lock3
 #   battery_pct:
 #     name: "Lock3_battery_level"
-# - id: bot2
-#   model: sesame_bot_2
-#   address: !secret bot2_address
-#   secret: !secret bot2_secret
-#   bot:
-#     id: bot_2
+- id: bot2
+  model: sesame_bot_2
+  address: !secret bot2_address
+  secret: !secret bot2_secret
+  bot:
+    id: bot_2
 
 ## Use below definitions only for discovering your SESAME BT Addresses.
 # sesame_ble:

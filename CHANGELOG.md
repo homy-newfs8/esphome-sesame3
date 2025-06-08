@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.18.0] 2025-06-08
+- Support SESAME Face / PRO
+- Support new History TAG format for SESAME May 2025 update
+
 ## [v0.17.0] 2025-05-31
 - Make `update()` callable from lambda (was mistakenly made private).
 - Improved compatibility with [esphome-sesame_server](https://github.com/homy-newfs8/esphome-sesame_server).
