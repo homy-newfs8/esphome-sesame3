@@ -7,9 +7,9 @@
 > components on the same ESP32. Use this component with a separate ESP32 device
 > from other BLE components.
 
-# When upgrading to 0.10.0 or later from previous versions
+# ESPHome version requirement
 
-See [Upgrade Guide](#upgrade-guide-to-0100-or-later).
+You need ESPHome 2025.5.0 or later to build this component.
 
 # Setup this component
 
@@ -522,7 +522,7 @@ sesame:
 
 This setting defers the connection to SESAME until the very end of ESPHome's initialization.
 
-# Upgrade Guide to 0.10.0 or later
+# Schema changed on 0.10.0
 
 There are big structural changes in configuration YAML. It's not difficult to convert to new schema, for example:
 
