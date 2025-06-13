@@ -165,6 +165,8 @@ def validate_bot_features(config):
     return config
 
 
+cv.All(cv.version_number, cv.validate_esphome_version)("2025.5.0")
+
 CONFIG_SCHEMA = cv.All(
     cv.Schema(
         {
