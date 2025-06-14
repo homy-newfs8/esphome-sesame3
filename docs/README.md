@@ -25,6 +25,7 @@ esphome:
       - -DCONFIG_BT_NIMBLE_MAX_CONNECTIONS=4
     build_unflags:
       - -std=gnu++11
+  min_version: 2025.5.0
 
 esp32:
   board: esp32-c3-devkitm-1
@@ -35,7 +36,7 @@ external_components:
   - source:
       type: git
       url: https://github.com/homy-newfs8/esphome-sesame3
-      ref: v0.18.0
+      ref: v0.18.1
     components: [ sesame, sesame_ble ]
 ```
 

@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.18.1] 2025-06-14
+- Add ESPHome minimum version validation
+
 ## [v0.18.0] 2025-06-08
 - Support SESAME Face / PRO
 - Support new History TAG format for SESAME May 2025 update

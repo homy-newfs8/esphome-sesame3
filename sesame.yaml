@@ -9,11 +9,12 @@ esphome:
     - -DCONFIG_BT_NIMBLE_MAX_CONNECTIONS=6
     build_unflags:
     - -std=gnu++11
+  min_version: 2025.5.0
 external_components:
 - source:
     type: git
     url: https://github.com/homy-newfs8/esphome-sesame3
-    ref: v0.18.0
+    ref: v0.18.1
   components: [ sesame, sesame_ble ]
 # - source: 'components'
 #   components: [ sesame, sesame_ble ]
