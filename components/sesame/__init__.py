@@ -215,7 +215,7 @@ CONFIG_SCHEMA = cv.All(
                 unit_of_measurement=UNIT_VOLT,
                 device_class=DEVICE_CLASS_VOLTAGE,
                 state_class=STATE_CLASS_MEASUREMENT,
-                accuracy_decimals=1,
+                accuracy_decimals=2,
             ),
             cv.Optional(CONF_CONNECT_RETRY_LIMIT): cv.int_range(min=0, max=65535),
             cv.Optional(CONF_CONNECTION_SENSOR): binary_sensor.binary_sensor_schema(
