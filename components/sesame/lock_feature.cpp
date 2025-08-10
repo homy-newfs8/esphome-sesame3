@@ -31,7 +31,7 @@ SesameLock::init() {
 	if (using_history()) {
 		recv_history_tag.reserve(SesameClient::MAX_CMD_TAG_SIZE + 1);
 		parent_->sesame.set_history_callback([this](auto& client, const auto& history) {
-			ESP_LOGD(TAG, "hist: r=%u, id=%d, type=%u, str=(%u)%.*s", static_cast<uint8_t>(history.result), history.record_id,
+			ESP_LOGD(TAG, "hist: r=%u, id=%ld, type=%u, str=(%u)%.*s", static_cast<uint8_t>(history.result), history.record_id,
 			         static_cast<uint8_t>(history.type), history.tag_len, history.tag_len, history.tag);
 			if (is_bot1()) {
 				handle_bot_history(history);

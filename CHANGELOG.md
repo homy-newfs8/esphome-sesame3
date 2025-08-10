@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.19.0] 2025-08-10
+- Support ESPHome 2025.7.0 (Arduino ESP32 3.x)
+  (fixes #9)
+
 ## [v0.18.1] 2025-06-14
 - Add ESPHome minimum version validation
 

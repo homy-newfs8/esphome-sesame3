@@ -2,9 +2,6 @@
 
 [ESPHome](https://esphome.io/) Smart Lock component for CANDY HOUSE [SESAME 5](https://jp.candyhouse.co/products/sesame5) / [SESAME 5 PRO](https://jp.candyhouse.co/products/sesame5-pro) / [SESAME Bot 2](https://jp.candyhouse.co/products/sesamebot2) / SESAME bot / SESAME 3 / SESAME 4 / SESAME Bike, control via Bluetooth LE
 
-> [!WARNING]
-> Currently, this component does not support ESPHome 2025.7.0 or later. Please use ESPHome 2025.6.3 or earlier.
-
 > [!NOTE]
 > This component does not use ESPHome's built-in `BTClient`
 > functionality. Therefore, this component cannot coexist with other BLE
@@ -13,7 +10,7 @@
 
 # ESPHome version requirement
 
-You need ESPHome 2025.5.0 or later to build this component.
+You need ESPHome 2025.7.0 or later to build this component. To use with versions between 2025.5.0 and 2025.6.3 see [below](#use-with-esphome-before-202570).
 
 # Setup this component
 
@@ -23,13 +20,12 @@ You need to add compiler / library options to ESPHome base configuration, and `e
 esphome:
   platformio_options:
     build_flags:
-      - -std=gnu++17 -Wall -Wextra
+      - -Wall -Wextra
       - -DMBEDTLS_DEPRECATED_REMOVED -DCONFIG_BT_NIMBLE_ROLE_BROADCASTER_DISABLED -DCONFIG_BT_NIMBLE_ROLE_PERIPHERAL_DISABLED
 # Configure the maximum number of connections as required
       - -DCONFIG_BT_NIMBLE_MAX_CONNECTIONS=4
-    build_unflags:
-      - -std=gnu++11
-  min_version: 2025.5.0
+      - -DCONFIG_MBEDTLS_CMAC_C	-DUSE_FRAMEWORK_MBEDTLS_CMAC
+  min_version: 2025.7.0
 
 esp32:
   board: esp32-c3-devkitm-1
@@ -40,13 +36,30 @@ external_components:
   - source:
       type: git
       url: https://github.com/homy-newfs8/esphome-sesame3
-      ref: v0.18.1
+      ref: v0.19.0
     components: [ sesame, sesame_ble ]
 ```
 
 Select the ESP32 board you want to use. Arduino framework is required.
 
 If you want to use more than four SESAME devices with one ESP32 module, edit the `CONFIG_BT_NIMBLE_MAX_CONNECTIUONS` parameter (It might be a good idea to check the free memory with ESPHome's [Debug](https://esphome.io/components/debug.html) component).
+
+## Use with ESPHome before 2025.7.0
+If you wanat to use with ESPHome version 2025.5.0～2025.6.3 replace esphome: section with below.
+(More older versions of ESPHome was supported by old versions of this component (not documented))
+
+```
+esphome:
+  platformio_options:
+    build_flags:
+      - -std=gnu++17 -Wall -Wextra
+      - -DMBEDTLS_DEPRECATED_REMOVED -DCONFIG_BT_NIMBLE_ROLE_BROADCASTER_DISABLED -DCONFIG_BT_NIMBLE_ROLE_PERIPHERAL_DISABLED
+# Configure the maximum number of connections as required
+      - -DCONFIG_BT_NIMBLE_MAX_CONNECTIONS=4
+    build_unflags:
+      - -std=gnu++11
+  min_version: 2025.5.0
+```
 
 # Configure for your SESAME
 

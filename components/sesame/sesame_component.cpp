@@ -138,7 +138,7 @@ SesameComponent::loop() {
 		case state_t::not_connected:
 			publish_connection_state(false);
 			if (connect_limit && connect_tried >= connect_limit) {
-				ESP_LOGE(TAG, "Cannot connect %d times, reboot after %u secs", connect_tried, REBOOT_DELAY_SEC);
+				ESP_LOGE(TAG, "Cannot connect %d times, reboot after %lu secs", connect_tried, REBOOT_DELAY_SEC);
 				set_state(state_t::wait_reboot);
 				break;
 			}
@@ -193,7 +193,7 @@ SesameComponent::loop() {
 			break;
 		case state_t::connecting:
 			if (now - state_started > connection_timeout + CONNECT_STATE_TIMEOUT_MARGIN) {
-				ESP_LOGE(TAG, "Connect timeout not occurred within expected time, reboot after %u secs", REBOOT_DELAY_SEC);
+				ESP_LOGE(TAG, "Connect timeout not occurred within expected time, reboot after %lu secs", REBOOT_DELAY_SEC);
 				connect_done(this);
 				set_state(state_t::wait_reboot);
 				break;
