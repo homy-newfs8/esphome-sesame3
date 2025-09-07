@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.20.0] 2025-08-07
+## [v0.20.0] 2025-09-07
 - Add `battery_critical` binary_sensor to sesame component
 - `is_critical` status of SESAME 5 / PRO is reflected to lock status `JAMMED`
 
