@@ -53,6 +53,7 @@ CONF_PUBLIC_KEY = "public_key"
 CONF_SECRET = "secret"
 CONF_BATTERY_PCT = "battery_pct"
 CONF_BATTERY_VOLTAGE = "battery_voltage"
+CONF_BATTERY_CRITICAL = "battery_critical"
 CONF_HISTORY_TAG = "history_tag"
 CONF_HISTORY_TYPE = "history_type"
 CONF_TRIGGER_TYPE = "trigger_type"
@@ -217,6 +218,9 @@ CONFIG_SCHEMA = cv.All(
                 state_class=STATE_CLASS_MEASUREMENT,
                 accuracy_decimals=2,
             ),
+            cv.Optional(CONF_BATTERY_CRITICAL): binary_sensor.binary_sensor_schema(
+                device_class=DEVICE_CLASS_BATTERY,
+            ),
             cv.Optional(CONF_CONNECT_RETRY_LIMIT): cv.int_range(min=0, max=65535),
             cv.Optional(CONF_CONNECTION_SENSOR): binary_sensor.binary_sensor_schema(
                 device_class=DEVICE_CLASS_CONNECTIVITY,
@@ -245,6 +249,9 @@ async def to_code(config):
     if CONF_CONNECTION_SENSOR in config:
         s = await binary_sensor.new_binary_sensor(config[CONF_CONNECTION_SENSOR])
         cg.add(var.set_connection_sensor(s))
+    if CONF_BATTERY_CRITICAL in config:
+        s = await binary_sensor.new_binary_sensor(config[CONF_BATTERY_CRITICAL])
+        cg.add(var.set_battery_critical_sensor(s))
     if CONF_CONNECT_RETRY_LIMIT in config:
         cg.add(var.set_connect_retry_limit(config[CONF_CONNECT_RETRY_LIMIT]))
     if CONF_TIMEOUT in config:
@@ -285,7 +292,7 @@ async def to_code(config):
         cg.add(var.set_feature(bot))
         cg.add(bot.init())
     cg.add(var.init(config[CONF_MODEL], config.get(CONF_PUBLIC_KEY), config[CONF_SECRET], str(config[CONF_ADDRESS])))
-    cg.add_library("libsesame3bt", None, "https://github.com/homy-newfs8/libsesame3bt#0.26.0")
+    cg.add_library("libsesame3bt", None, "https://github.com/homy-newfs8/libsesame3bt#0.27.0")
     # cg.add_library("libsesame3bt", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt")
     # cg.add_library("libsesame3bt-core", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt-core")
     # cg.add_library("libsesame3bt-server", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt-server")

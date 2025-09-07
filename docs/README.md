@@ -115,6 +115,9 @@ sesame:
 * **battery_voltage** (*Optional*, [Sensor](https://esphome.io/components/sensor/#config-sensor)): See [below](#expose-sesame-battery-information-as-sensor-value)
 	* **name** (**Required**, string): The name of the voltage sensor.
 	* All other options from [sensor](https://esphome.io/components/sensor/#config-sensor)
+* **battery_critical** (*Optional*, [Binary Sensor](https://esphome.io/components/binary_sensor/#base-binary-sensor-configuration)): SESAME battery critical state is exposed as a binary sensor.
+	* **name** (**Required**, string): The name of connection sensor.
+  * All other options from [binary_sensor](https://esphome.io/components/binary_sensor/#base-binary-sensor-configuration)
 * **connection_sensor** (*Optional*, [Binary Sensor](https://esphome.io/components/binary_sensor/#base-binary-sensor-configuration)): SESAME connection state is exposed as a binary sensor.
 	* **name** (**Required**, string): The name of connection sensor.
   * All other options from [binary_sensor](https://esphome.io/components/binary_sensor/#base-binary-sensor-configuration)

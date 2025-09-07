@@ -96,6 +96,9 @@ SesameComponent::reflect_sesame_status() {
 	if (voltage_sensor) {
 		voltage_sensor->publish_state(sesame_status->voltage());
 	}
+	if (battery_critical_sensor) {
+		battery_critical_sensor->publish_state(sesame_status->battery_critical());
+	}
 	if (feature) {
 		feature->reflect_status_changed();
 	}
@@ -265,7 +268,7 @@ SesameComponent::connect_done(SesameComponent* client) {
 		return;
 	}
 	ESP_LOGD(STATIC_TAG, "Connection queue mishandled");
-	std::remove(std::begin(connect_queue), std::end(connect_queue), client);
+	(void)std::remove(std::begin(connect_queue), std::end(connect_queue), client);
 	return;
 }
 

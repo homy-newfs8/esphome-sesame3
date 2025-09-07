@@ -197,7 +197,9 @@ SesameLock::reflect_status_changed() {
 	}
 	jam_detection_started = 0;
 	lock::LockState new_lock_state;
-	if (sesame_status->in_unlock()) {
+	if (sesame_status->is_critical()) {
+		new_lock_state = lock::LOCK_STATE_JAMMED;
+	} else if (sesame_status->in_unlock()) {
 		new_lock_state = lock::LOCK_STATE_UNLOCKED;
 	} else {
 		new_lock_state = lock::LOCK_STATE_LOCKED;

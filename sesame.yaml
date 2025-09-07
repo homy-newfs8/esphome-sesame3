@@ -13,13 +13,13 @@ external_components:
   - source:
       type: git
       url: https://github.com/homy-newfs8/esphome-sesame3
-      ref: v0.19.0
+      ref: v0.20.0
     components: [sesame, sesame_ble]
   # - source: "components"
   #   components: [sesame, sesame_ble]
 
 esp32:
-  board: esp32-c3-devkitm-1
+  board: esp32-s3-devkitc-1
   framework:
     type: arduino
 
@@ -126,6 +126,9 @@ sesame:
     ## expose battery voltage with specified name
     battery_voltage:
       name: "Lock1_battery_voltage"
+    ## expose battery critical state as binary sensor
+    battery_critical:
+      name: "Lock1_battery_critical"
     ## expose SESAME connection status
     connection_sensor:
       name: "Lock1_connection"

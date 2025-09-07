@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.20.0] 2025-08-07
+- Add `battery_critical` binary_sensor to sesame component
+- `is_critical` status of SESAME 5 / PRO is reflected to lock status `JAMMED`
+
 ## [v0.19.0] 2025-08-10
 - Support ESPHome 2025.7.0 (Arduino ESP32 3.x)
   (fixes #9)

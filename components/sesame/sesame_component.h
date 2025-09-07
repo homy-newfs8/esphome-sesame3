@@ -43,6 +43,7 @@ class SesameComponent : public PollingComponent {
 	void set_battery_pct_sensor(sensor::Sensor* sensor) { pct_sensor = sensor; }
 	void set_battery_voltage_sensor(sensor::Sensor* sensor) { voltage_sensor = sensor; }
 	void set_connection_sensor(binary_sensor::BinarySensor* sensor) { connection_sensor = sensor; }
+	void set_battery_critical_sensor(binary_sensor::BinarySensor* sensor) { battery_critical_sensor = sensor; }
 	void set_connect_retry_limit(uint16_t retry_limit) { connect_limit = retry_limit; }
 	void set_connection_timeout(uint32_t timeout) { connection_timeout = timeout; }
 	void set_feature(Feature* feature) { this->feature = feature; }
@@ -61,6 +62,7 @@ class SesameComponent : public PollingComponent {
 	const char* TAG = "";
 	sensor::Sensor* pct_sensor = nullptr;
 	sensor::Sensor* voltage_sensor = nullptr;
+	binary_sensor::BinarySensor* battery_critical_sensor = nullptr;
 	Feature* feature = nullptr;
 	binary_sensor::BinarySensor* connection_sensor = nullptr;
 	sesame_server::SesameServerComponent* server = nullptr;
