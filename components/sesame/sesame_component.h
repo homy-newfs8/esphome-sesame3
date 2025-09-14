@@ -6,6 +6,7 @@
 #include <esphome/core/component.h>
 #include <mutex>
 #include <optional>
+#include <string_view>
 #include <vector>
 #include "feature.h"
 
@@ -37,7 +38,11 @@ class SesameComponent : public PollingComponent {
 
  public:
 	SesameComponent(const char* id);
-	void init(libsesame3bt::Sesame::model_t model, const char* pubkey, const char* secret, const char* btaddr);
+	void init(libsesame3bt::Sesame::model_t model,
+	          std::string_view pubkey,
+	          std::string_view secret,
+	          std::string_view btaddr,
+	          std::string_view uuid);
 	void setup() override;
 	void loop() override;
 	void set_battery_pct_sensor(sensor::Sensor* sensor) { pct_sensor = sensor; }

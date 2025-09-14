@@ -54,13 +54,29 @@ SesameComponent::SesameComponent(const char* id) {
 }
 
 void
-SesameComponent::init(model_t model, const char* pubkey, const char* secret, const char* btaddr) {
+SesameComponent::init(model_t model,
+                      std::string_view pubkey,
+                      std::string_view secret,
+                      std::string_view btaddr,
+                      std::string_view uuid) {
 	sesame.set_connect_timeout(connection_timeout);
-	ble_address = NimBLEAddress(btaddr, BLE_ADDR_RANDOM);
-	if (!sesame.begin(ble_address, model)) {
-		ESP_LOGE(TAG, "Failed to SesameClient::begin. May be unsupported model.");
+	if (!btaddr.empty()) {
+		ble_address = NimBLEAddress(std::string{btaddr}, BLE_ADDR_RANDOM);
+		if (!sesame.begin(ble_address, model)) {
+			ESP_LOGE(TAG, "Failed to SesameClient::begin. May be unsupported model.");
+			mark_failed();
+			return;
+		}
+	} else if (uuid.empty()) {
+		ESP_LOGE(TAG, "Either btaddr or uuid is required.");
 		mark_failed();
 		return;
+	} else {
+		if (!sesame.begin(NimBLEUUID{std::string{uuid}}, model)) {
+			ESP_LOGE(TAG, "Failed to SesameClient::begin with uuid. May be unsupported model.");
+			mark_failed();
+			return;
+		}
 	}
 	if (!sesame.set_keys(pubkey, secret)) {
 		ESP_LOGE(TAG, "Failed to set keys. Invalid pubkey or secret.");

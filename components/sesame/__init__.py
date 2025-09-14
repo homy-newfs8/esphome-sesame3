@@ -11,6 +11,7 @@ from esphome.const import (
     CONF_MODEL,
     CONF_TAG,
     CONF_TIMEOUT,
+    CONF_UUID,
     DEVICE_CLASS_BATTERY,
     DEVICE_CLASS_CONNECTIVITY,
     DEVICE_CLASS_EMPTY,
@@ -166,6 +167,17 @@ def validate_bot_features(config):
     return config
 
 
+def validate_address(config):
+    model = config[CONF_MODEL]
+    if is_os3_model(model):
+        if CONF_UUID not in config and CONF_ADDRESS not in config:
+            raise cv.RequiredFieldInvalid(f"Either 'uuid' or 'address' is required for {model}")
+    else:
+        if CONF_ADDRESS not in config:
+            raise cv.RequiredFieldInvalid(f"'address' is required for {model}")
+    return config
+
+
 cv.All(cv.version_number, cv.validate_esphome_version)("2025.5.0")
 
 CONFIG_SCHEMA = cv.All(
@@ -175,7 +187,8 @@ CONFIG_SCHEMA = cv.All(
             cv.Required(CONF_MODEL): cv.enum(SESAME_MODELS),
             cv.Optional(CONF_PUBLIC_KEY, default=""): cv.string,
             cv.Required(CONF_SECRET): valid_hexstring(CONF_SECRET, 32),
-            cv.Required(CONF_ADDRESS): cv.mac_address,
+            cv.Optional(CONF_ADDRESS): cv.mac_address,
+            cv.Optional(CONF_UUID): cv.uuid,
             cv.Optional(CONF_LOCK): lock.lock_schema().extend(
                 {
                     cv.GenerateID(): cv.declare_id(SesameLock),
@@ -229,6 +242,7 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(CONF_ALWAYS_CONNECT, default=True): cv.boolean,
         }
     ).extend(cv.polling_component_schema("never")),
+    validate_address,
     validate_pubkey,
     validate_lockable,
     validate_always_connect,
@@ -291,9 +305,12 @@ async def to_code(config):
             cg.add(bot.set_running_sensor(s))
         cg.add(var.set_feature(bot))
         cg.add(bot.init())
-    cg.add(var.init(config[CONF_MODEL], config.get(CONF_PUBLIC_KEY), config[CONF_SECRET], str(config[CONF_ADDRESS])))
     cg.add_library("libsesame3bt", None, "https://github.com/homy-newfs8/libsesame3bt#0.27.0")
     # cg.add_library("libsesame3bt", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt")
     # cg.add_library("libsesame3bt-core", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt-core")
+    address = str(config[CONF_ADDRESS]) if CONF_ADDRESS in config else ""
+    uuid = str(config[CONF_UUID]) if CONF_UUID in config else ""
+    cg.add(var.init(config[CONF_MODEL], config[CONF_PUBLIC_KEY], config[CONF_SECRET], address, uuid))
+
     # cg.add_library("libsesame3bt-server", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt-server")
     # cg.add_platformio_option("lib_ldf_mode", "deep")
