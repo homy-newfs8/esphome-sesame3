@@ -250,7 +250,8 @@ sesame:
   address: 01:02:03:04:05:06
 ```
 
-> [!NOTE] `sesame` component cannot coexist with other BLE components
+> [!NOTE]
+> `sesame` component cannot coexist with other BLE components
 > including `esp32_ble_tracker`. Once you have identified SESAME's BLE address,
 > you will need to remove the above configuration.</b>
 
