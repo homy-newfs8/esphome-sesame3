@@ -36,7 +36,7 @@ external_components:
   - source:
       type: git
       url: https://github.com/homy-newfs8/esphome-sesame3
-      ref: v0.21.0
+      ref: v0.22.0
     components: [ sesame, sesame_ble ]
 ```
 
@@ -44,60 +44,34 @@ Select the ESP32 board you want to use. Arduino framework is required.
 
 If you want to use more than four SESAME devices with one ESP32 module, edit the `CONFIG_BT_NIMBLE_MAX_CONNECTIUONS` parameter (It might be a good idea to check the free memory with ESPHome's [Debug](https://esphome.io/components/debug.html) component).
 
-## Use with ESPHome before 2025.7.0
-If you wanat to use with ESPHome version 2025.5.0～2025.6.3 replace esphome: section with below.
-(More older versions of ESPHome was supported by old versions of this component (not documented))
-
-```
-esphome:
-  platformio_options:
-    build_flags:
-      - -std=gnu++17 -Wall -Wextra
-      - -DMBEDTLS_DEPRECATED_REMOVED -DCONFIG_BT_NIMBLE_ROLE_BROADCASTER_DISABLED -DCONFIG_BT_NIMBLE_ROLE_PERIPHERAL_DISABLED
-# Configure the maximum number of connections as required
-      - -DCONFIG_BT_NIMBLE_MAX_CONNECTIONS=4
-    build_unflags:
-      - -std=gnu++11
-  min_version: 2025.5.0
-```
-
 # Configure for your SESAME
 
 ## Minimum configuration
 
 ```yaml
 sesame:
+  # Model type identifier
   model: sesame_5
-  # 6 bytes colon separated Bluetooth address
-  address: "ab:cd:ef:01:02:03"
+  # 32 hexadecimal with 4 hyphens (8-4-4-4-12)
+  uuid: "01020304-0102-0102-0102-010203040506"
   # 16 bytes binary in hexadecimal
   secret: "0123456789abcdef0123456789abcdef"
-  # 64 bytes binary in hexadecimal (Empty for SESAME 5 / PRO)
-  public_key: ""
   lock:
     id: lock_1
     name: Lock1
     tag: "My awesome system"
 ```
 
-If define `id:` of `sesame:` component, it will be used as logging prefix.
 
-```yaml
-sesame:
-  id: sesame1
-  model: sesame_5
-    ⋮
-```
-```
-[05:23:27][D][sesame1:317]: connecting
-[05:23:31][D][sesame1:321]: connect done
-[05:23:31][I][sesame1:283]: Authenticated by SESAME
-```
+If you are using SESAME OS 2 Devices (SESAME 3 / SESAME 4 / SESAME bike / SESAME bot), you must specify Bluetooth MAC `address` instead of `uuid`.
+
+See [below](#identify-parameter-values-for-sesame-devices) for information on how to find the parameters (`uuid`, `secret`) for your SESAME.
 
 ## Configuration variables
 
-* **model** (**Required**): Model of SESAME. Use one of: `sesame_5`, `sesame_5_pro`, `sesame_bot_2`, `sesame_touch`, `sesame_touch_pro`, `remote`, `sesame_4`, `sesame_3`, `sesame_bot`, `sesame_bike`
-* **address** (**Required**, string): See [below](#identify-parameter-values-for-sesame-devices).
+* **model** (**Required**): Model of SESAME. Use one of: `sesame_5`, `sesame_5_pro`, `sesame_bot_2`, `sesame_bike_2`, `sesame_face`, `sesame_face_pro`,`sesame_touch`, `sesame_touch_pro`, `remote`, `sesame_4`, `sesame_3`, `sesame_bot`, `sesame_bike`
+* **uuid** (**Optional**, string): UUID of SESAME. `uuid` or `address` must be specified, see [below](#identify-parameter-values-for-sesame-devices).
+* **address** (**Optional** for SESAME OS3 models, **Required** for SESAME OS2 models, string): Bluetooth MAC Address of SESAME. `uuid` or `address` must be specified, see [below](#identify-parameter-values-for-sesame-devices).
 * **secret** (**Required**, string): See [below](#identify-parameter-values-for-sesame-devices).
 * **public_key** (**Required** for SESAME OS2 models, string): See [below](#identify-parameter-values-for-sesame-devices).
 * **timeout** (*Optional*, [Time](https://esphome.io/guides/configuration-types#config-time)): Connection to SESAME timeout value. Defaults to `10s`.
@@ -105,7 +79,7 @@ sesame:
 * **always_connect** (*Optional*, bool): Keep connection with SESAME. Must be `true` when this component contains `lock` object. Defaults to `true`. If set to `false`, disconnect from SESAME after receiving the status (and reconnect if `update_interval` is set).
 * **update_interval** (*Optional*, [Time](https://esphome.io/guides/configuration-types#config-time)): Request SESAME to send current status with this interval. Some devices (SESAME Touch) do not send updated status without this option. Defaults to `never`.
 * **lock** (*Optional*, sesame_lock): Lock specific configurations. See [below](#lock-specific-variables).
-* **bot** (*Optional*, sesame_bot): Bot specific configurations. See [below](#bot-specific-settings-from-v0110)
+* **bot** (*Optional*, sesame_bot): Bot specific configurations. See [below](#bot-specific-variables-from-v0110)
 
 ### Expose SESAME status as sensors
 
@@ -143,10 +117,10 @@ In addition to base [Lock](https://esphome.io/components/lock/#base-lock-configu
 If you don't want it to be treated as "Unlocked", you can send the unknown state as any other state (candidates: `NONE`, `LOCKED`, `UNLOCKED`, `JAMMED`, `LOCKING`, `UNLOCKING`). If not set as this variable, this module will not send `LOCKING` and `UNLOCKING`, so you can write automation scripts that interpret these values as "UNKNOWN".
 * **unknown_state_timeout** (*Optional*, [Time](https://esphome.io/guides/configuration-types#config-time)): If you do not want disconnection from SESAME to be immediately treated as unknown, set a timeout value with this variable. Defaults to `20s`.
 
-## Bot specific settings (From v0.11.0)
+## Bot specific variables (From v0.11.0)
 
-For `sesame_bot`, you can specify [lock](#lock-specific-variables) or [bot](#bot-specific-settings-from-v0110).
-For `sesame_bot_2`, [bot](#bot-specific-settings-from-v0110) can be used.
+For `sesame_bot`, you can specify [lock](#lock-specific-variables) or [bot](#bot-specific-variables-from-v0110).
+For `sesame_bot_2`, [bot](#bot-specific-variables-from-v0110) can be used.
 See [bot usage](#sesame-bot-usage) for detailed example.
 
 * **bot**: Bot settings section marker.
@@ -155,35 +129,17 @@ See [bot usage](#sesame-bot-usage) for detailed example.
 
 ## Identify parameter values ​​for SESAME devices
 
-### `address` (Bluetooth LE MAC Address)
+### `uuid`
 
-You can identify your SESAME address by using ESPHome BLE tracker with `sesame_ble` component. First, remove `sesame:` component definition and add below to your configuration:
-
-```yaml
-logger:
-
-sesame_ble:
-```
-(`logger` must be specified for logging output)
-
-Upload and restart ESP32, logging message contains discovered SESAME devices information:
+You can find the UUID using the SESAME smartphone app. Open the details screen of the SESAME you want to control and use the string listed in the UUID field. The UUID is a string consisting of hexadecimal numbers and hyphens, as shown below.
 
 ```
-[08:20:23][I][sesame_ble:107]: 01:02:03:04:05:06 SESAME 5 UUID=01020304-0102-0102-0102-010203040506
+01020304-0506-0708-0a0b-0c0d0e0f0102
 ```
 
-Colon separated 6 bytes is Bluetooth address, if you have multiple SESAME devices, distinguish with UUID (You can check the UUID of a SESAME using the SESAME smartphone app).
+If you write the wrong value, the connection will fail, so please double check.
 
-Configuration for this device will be:
-
-```yaml
-sesame:
-  address: 01:02:03:04:05:06
-```
-
-> [!NOTE] `sesame` component cannot coexist with other BLE components
-> including `esp32_ble_tracker`. Once you have identified SESAME's BLE address,
-> you will need to remove the above configuration.</b>
+If the UUID is displayed abbreviated, try changing the font size on your smartphone to a smaller one.
 
 ### `secret` (Secret key of your SESAME)
 
@@ -201,7 +157,7 @@ Display `Owner` or `Manager` key and decode the QR code with any QR decoder. Dec
 ssm://UI?t=sk&sk=BQECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUm&l=1&n=セサミ 5
 ```
 Query parameter `sk` is `base64` encoded binary data
-(if `sk` value contains `%2A` or `%2F`, replace them with `+` or `/`).
+(if `sk` value contains `%2B` or `%2F`, replace them with `+` or `/`).
 
 Above base64 string is decoded as below:
 
@@ -263,6 +219,40 @@ sesame:
   secret: "0102030405060708090a0b0c0d0e0f10"
   public_key: "1112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f50"
 ```
+
+### `address` (Bluetooth MAC Address)
+
+For SESAME OS3 devices (SESAME 5 / Bot 2 / Bike 2), you do not need to specify the Bluetooth MAC address in the yaml.
+
+If you are using a SESAME OS2 device or are unable to specify `uuid`, continue reading this chapter.
+
+You can identify your SESAME address by using ESPHome BLE tracker with `sesame_ble` component. First, remove `sesame:` component definition and add below to your configuration:
+
+```yaml
+logger:
+
+sesame_ble:
+```
+(`logger` must be specified for logging output)
+
+Upload and restart ESP32, logging message contains discovered SESAME devices information:
+
+```
+[08:20:23][I][sesame_ble:107]: 01:02:03:04:05:06 SESAME 5 UUID=01020304-0102-0102-0102-010203040506
+```
+
+Colon separated 6 bytes is Bluetooth address, if you have multiple SESAME devices, distinguish with UUID (You can check the UUID of a SESAME using the SESAME smartphone app).
+
+Configuration for this device will be:
+
+```yaml
+sesame:
+  address: 01:02:03:04:05:06
+```
+
+> [!NOTE] `sesame` component cannot coexist with other BLE components
+> including `esp32_ble_tracker`. Once you have identified SESAME's BLE address,
+> you will need to remove the above configuration.</b>
 
 # Expose SESAME battery information as sensor value
 
@@ -381,7 +371,7 @@ sesame:
 
 ```
 
-### trigger type values
+### Trigger type values
 
 Currently observed values.
 
@@ -523,6 +513,40 @@ data:
   tag: "***Anything***"
 ```
 
+# Multiple SESAME conotrol
+
+If you want to control multiple SESAME devices by one ESP32, define multiple `sesame` objects:
+
+```yaml
+sesame:
+- id: lock1
+  model: sesame_5
+  address: "ab:cd:ef:01:02:03"
+  secret: "0123456789abcdef0123456789abcdef"
+  battery_pct:
+    name: Lock1_battery_level
+  lock:
+    name: Lock1
+    id: lock_1
+    tag: "My awesome system"
+    history_tag:
+      name: Lock1_history_tag
+- id: touch1
+  model: sesame_touch
+  address: "12:34:56:78:9a:bc"
+  secret: "0123456789abcdef0123456789abcdef"
+  battery_pct:
+    name: Touch1_battery_level
+  update_interval: 12h
+```
+The `id:` of the `sesame` object is not required. However, it is used as a logging prefix, which is useful for troubleshooting in multiple device environments.
+
+```
+[05:23:27][D][sesame1:317]: connecting
+[05:23:31][D][sesame1:321]: connect done
+[05:23:31][I][sesame1:283]: Authenticated by SESAME
+```
+
 # Full example configuration file
 
 See [sesame.yaml](../sesame.yaml).
@@ -542,6 +566,23 @@ sesame:
 ```
 
 This setting defers the connection to SESAME until the very end of ESPHome's initialization.
+
+# Use with ESPHome before 2025.7.0
+If you wanat to use with ESPHome version 2025.5.0～2025.6.3 replace esphome: section with below.
+(More older versions of ESPHome was supported by old versions of this component (not documented))
+
+```
+esphome:
+  platformio_options:
+    build_flags:
+      - -std=gnu++17 -Wall -Wextra
+      - -DMBEDTLS_DEPRECATED_REMOVED -DCONFIG_BT_NIMBLE_ROLE_BROADCASTER_DISABLED -DCONFIG_BT_NIMBLE_ROLE_PERIPHERAL_DISABLED
+# Configure the maximum number of connections as required
+      - -DCONFIG_BT_NIMBLE_MAX_CONNECTIONS=4
+    build_unflags:
+      - -std=gnu++11
+  min_version: 2025.5.0
+```
 
 # Schema changed on 0.10.0
 
@@ -607,32 +648,6 @@ In summary,
 * Definition starts with `sesame:` object.
 * Lock-specific settings have been moved under the `lock:` object.
 * Non-locking devices (such as SESAME Touch / Remote) are supported. There is no need to define a `lock:` object for such devices.
-
-If you want to control multiple SESAME devices by one ESP32, define multiple `sesame` objects:
-
-```yaml
-sesame:
-- id: lock1
-  model: sesame_5
-  address: "ab:cd:ef:01:02:03"
-  secret: "0123456789abcdef0123456789abcdef"
-  battery_pct:
-    name: Lock1_battery_level
-  lock:
-    name: Lock1
-    id: lock_1
-    tag: "My awesome system"
-    history_tag:
-      name: Lock1_history_tag
-- id: touch1
-  model: sesame_touch
-  address: "12:34:56:78:9a:bc"
-  secret: "0123456789abcdef0123456789abcdef"
-  battery_pct:
-    name: Touch1_battery_level
-  update_interval: 12h
-```
-The `id:` of the `sesame` object is not required. However, it is used as a logging prefix, which is useful for troubleshooting in multiple device environments.
 
 # Related
 

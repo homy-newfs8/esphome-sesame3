@@ -13,7 +13,7 @@ external_components:
   - source:
       type: git
       url: https://github.com/homy-newfs8/esphome-sesame3
-      ref: v0.21.0
+      ref: v0.22.0
     components: [sesame, sesame_ble]
   # - source: "components"
   #   components: [sesame, sesame_ble]
@@ -101,7 +101,7 @@ sesame:
   - id: sesame1
     ## model: Requried: sesame_5 / sesame_5_pro / sesame_touch / sesame_touch_pro / open_sensor / sesame_bike_2 / sesame_4 / sesame_3 / sesame_bot / sesame_bike
     model: sesame_5
-    address: !secret sesame5_address
+    uuid: !secret sesame5_uuid
     ## public_key: Required for sesame_3 / sesame_4 / sesame_bot / sesame_bike
     ## for sesame_5 / sesame_5_pro comment out public_key line or specify any string (will be ignored)
     public_key: ""
@@ -183,7 +183,7 @@ sesame:
   # - id: touch1
   #   model: sesame_touch
   #   secret: !secret touch_secret
-  #   address: !secret touch_address
+  #   uuid: !secret touch_uuid
   #   always_connect: false
   #   update_interval: 12h
   #   battery_pct:
@@ -194,7 +194,7 @@ sesame:
   #     name: Touch1_connection
   # - id: lock3
   #   model: sesame_5
-  #   address: !secret sesame5_1_address
+  #   uuid: !secret sesame5_1_uuid
   #   secret: !secret sesame5_1_secret
   #   lock:
   #     id: lock_3
@@ -203,7 +203,7 @@ sesame:
   #     name: "Lock3_battery_level"
   - id: bot2
     model: sesame_bot_2
-    address: !secret bot2_address
+    uuid: !secret bot2_uuid
     secret: !secret bot2_secret
     bot:
       id: bot_2

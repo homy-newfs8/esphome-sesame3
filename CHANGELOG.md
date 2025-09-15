@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.22.0] 2025-09-15
+- For SESAME OS3 devices, it is no longer necessary to specify the Bluetooth address, you can specify the UUID instead.
+- Fix Remote, Bot 2 battery voltage (was doubled).
+- SESAME bike 2 supported.
+- Support Aug 2025 version of SESAME bot 2 and bike 2
+
 ## [v0.21.0] 2025-09-10
 - Fix insufficient dependent library declaration in `sesame_ble`
 

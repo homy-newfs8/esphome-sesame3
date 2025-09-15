@@ -25,6 +25,7 @@ from esphome.const import (
 )
 from esphome.cpp_generator import MockObjClass
 import esphome.final_validate as fv
+from esphome.types import ConfigType
 
 AUTO_LOAD = ["sensor", "text_sensor", "binary_sensor", "lock"]
 DEPENDENCIES = ["sensor", "text_sensor", "binary_sensor"]
@@ -137,7 +138,7 @@ def valid_hexstring(key, valid_len):
     return func
 
 
-def validate_pubkey(config):
+def validate_pubkey(config: ConfigType) -> ConfigType:
     if not is_os3_model(config[CONF_MODEL]):
         if not config[CONF_PUBLIC_KEY]:
             raise cv.RequiredFieldInvalid("'public_key' is required for SESAME 3 / SESAME 4 / SESAME bot / SESAME Bike")
@@ -145,21 +146,21 @@ def validate_pubkey(config):
     return config
 
 
-def validate_lockable(config):
+def validate_lockable(config: ConfigType) -> ConfigType:
     if not is_lockable_model(config[CONF_MODEL]):
         if CONF_LOCK in config:
             raise cv.Invalid(f"Cannot define 'lock' for {config[CONF_MODEL]}")
     return config
 
 
-def validate_always_connect(config):
+def validate_always_connect(config: ConfigType) -> ConfigType:
     if CONF_ALWAYS_CONNECT and not config[CONF_ALWAYS_CONNECT]:
         if CONF_LOCK in config or CONF_BOT in config:
             raise cv.Invalid("When using `lock` or `bot`, `always_connect` must be True")
     return config
 
 
-def validate_bot_features(config):
+def validate_bot_features(config: ConfigType) -> ConfigType:
     if CONF_LOCK in config and CONF_BOT in config:
         raise cv.Invalid("Cannot define both `lock` and `bot` on one Bot device")
     if CONF_BOT in config and config[CONF_MODEL] not in ("sesame_bot", "sesame_bot_2"):
@@ -167,7 +168,7 @@ def validate_bot_features(config):
     return config
 
 
-def validate_address(config):
+def validate_address(config: ConfigType) -> ConfigType:
     model = config[CONF_MODEL]
     if is_os3_model(model):
         if CONF_UUID not in config and CONF_ADDRESS not in config:
@@ -305,12 +306,12 @@ async def to_code(config):
             cg.add(bot.set_running_sensor(s))
         cg.add(var.set_feature(bot))
         cg.add(bot.init())
-    cg.add_library("libsesame3bt", None, "https://github.com/homy-newfs8/libsesame3bt#0.27.0")
-    # cg.add_library("libsesame3bt", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt")
-    # cg.add_library("libsesame3bt-core", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt-core")
     address = str(config[CONF_ADDRESS]) if CONF_ADDRESS in config else ""
     uuid = str(config[CONF_UUID]) if CONF_UUID in config else ""
     cg.add(var.init(config[CONF_MODEL], config[CONF_PUBLIC_KEY], config[CONF_SECRET], address, uuid))
 
+    cg.add_library("libsesame3bt", None, "https://github.com/homy-newfs8/libsesame3bt#0.28.0")
+    # cg.add_library("libsesame3bt", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt")
+    # cg.add_library("libsesame3bt-core", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt-core")
     # cg.add_library("libsesame3bt-server", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt-server")
     # cg.add_platformio_option("lib_ldf_mode", "deep")
