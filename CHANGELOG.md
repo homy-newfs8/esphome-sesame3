@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.22.1] 2025-09-16
+- Bump sesame_ble dependency version aligned to sesame component.
+
 ## [v0.22.0] 2025-09-15
 - For SESAME OS3 devices, it is no longer necessary to specify the Bluetooth address, you can specify the UUID instead.
 - Fix Remote, Bot 2 battery voltage (was doubled).
