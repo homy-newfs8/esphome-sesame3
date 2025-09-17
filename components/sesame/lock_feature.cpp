@@ -64,7 +64,13 @@ SesameLock::test_unknown_state() {
 			if (unknown_state_started == 0) {
 				unknown_state_started = now;
 			} else if (unknown_state_timeout && now - unknown_state_started > unknown_state_timeout) {
-				reflect_status_changed();
+				update_lock_state(lock::LOCK_STATE_NONE);
+				if (history_tag_sensor) {
+					history_tag_sensor->publish_state("");
+				}
+				if (history_type_sensor) {
+					history_type_sensor->publish_state(NAN);
+				}
 				unknown_state_started = 0;
 			}
 		}
@@ -169,7 +175,7 @@ void
 SesameLock::reflect_status_changed() {
 	const auto& sesame_status = parent_->sesame_status;
 	if (!sesame_status) {
-		update_lock_state(LockState::LOCK_STATE_NONE);
+		// update_lock_state(LockState::LOCK_STATE_NONE);
 		return;
 	}
 	if (is_bot1()) {

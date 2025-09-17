@@ -56,6 +56,7 @@ class SesameComponent : public PollingComponent {
 	virtual float get_setup_priority() const override { return setup_priority::AFTER_WIFI; };
 	void set_sesame_server(sesame_server::SesameServerComponent* server) { this->server = server; }
 	virtual void update() override;
+	void make_unknown();
 
  private:
 	libsesame3bt::SesameClient sesame;

@@ -107,13 +107,17 @@ SesameComponent::setup() {
 void
 SesameComponent::reflect_sesame_status() {
 	if (pct_sensor) {
-		pct_sensor->publish_state(sesame_status->battery_pct());
+		pct_sensor->publish_state(sesame_status ? sesame_status->battery_pct() : NAN);
 	}
 	if (voltage_sensor) {
-		voltage_sensor->publish_state(sesame_status->voltage());
+		voltage_sensor->publish_state(sesame_status ? sesame_status->voltage() : NAN);
 	}
 	if (battery_critical_sensor) {
-		battery_critical_sensor->publish_state(sesame_status->battery_critical());
+		if (sesame_status) {
+			battery_critical_sensor->publish_state(sesame_status->battery_critical());
+		} else {
+			battery_critical_sensor->invalidate_state();
+		}
 	}
 	if (feature) {
 		feature->reflect_status_changed();
@@ -225,11 +229,13 @@ SesameComponent::loop() {
 				} else {
 					ESP_LOGW(TAG, "Failed to start authenticate, rc=%d", get_last_error());
 					disconnect();
+					make_unknown();
 				}
 			} else if (sesame.get_state() != SesameClient::state_t::connecting) {
 				ESP_LOGW(TAG, "Failed to connect, rc=%d", get_last_error());
 				connect_done(this);
 				disconnect();
+				make_unknown();
 			}
 			break;
 		case state_t::authenticating:
@@ -244,6 +250,7 @@ SesameComponent::loop() {
 			           now - state_started > AUTHENTICATE_TIMEOUT) {
 				ESP_LOGW(TAG, "Failed to authenticate");
 				disconnect();
+				make_unknown();
 			}
 			break;
 		case state_t::running:
@@ -251,6 +258,7 @@ SesameComponent::loop() {
 				disconnect();
 			} else if (sesame.get_state() != SesameClient::state_t::active) {
 				disconnect();
+				make_unknown();
 			}
 			break;
 		case state_t::wait_reboot:
@@ -315,6 +323,12 @@ SesameComponent::update() {
 	} else {
 		ESP_LOGD(TAG, "Skipping update in state %d", static_cast<int>(my_state));
 	}
+}
+
+void
+SesameComponent::make_unknown() {
+	sesame_status.reset();
+	reflect_sesame_status();
 }
 
 }  // namespace sesame_lock

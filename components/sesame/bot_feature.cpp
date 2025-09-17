@@ -12,6 +12,7 @@ BotFeature::reflect_status_changed() {
 	}
 	const auto& sesame_status = parent_->sesame_status;
 	if (!sesame_status) {
+		running_sensor->invalidate_state();
 		return;
 	}
 	auto model = parent_->sesame.get_model();
