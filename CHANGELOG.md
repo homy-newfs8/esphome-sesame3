@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.23.0] 2025-09-19
+- In case of a connection error or unexpected disconnection, battery-related sensors will immediately be issued with an `UNKNOWN` status.
+- When a lock becomes "UNKNOWN", the "UNKNOWN" state is issued to history-related sensors.
+
 ## [v0.22.1] 2025-09-16
 - Bump sesame_ble dependency version aligned to sesame component.
 
