@@ -1,3 +1,4 @@
+import logging
 import string
 
 from esphome import core
@@ -26,6 +27,8 @@ from esphome.const import (
 from esphome.cpp_generator import MockObjClass
 import esphome.final_validate as fv
 from esphome.types import ConfigType
+
+_LOGGER = logging.getLogger(__name__)
 
 AUTO_LOAD = ["sensor", "text_sensor", "binary_sensor", "lock"]
 DEPENDENCIES = ["sensor", "text_sensor", "binary_sensor"]
@@ -179,6 +182,15 @@ def validate_address(config: ConfigType) -> ConfigType:
     return config
 
 
+def validate_deprecation(config: ConfigType) -> ConfigType:
+    if CONF_UNKNOWN_STATE_ALTERNATIVE in config:
+        _LOGGER.warning(
+            f"The option '{CONF_UNKNOWN_STATE_ALTERNATIVE}' is deprecated."
+            " As of Home Assistant 2025.10.0, The `unknown` state is properly treated as `unknown`."
+        )
+    return config
+
+
 cv.All(cv.version_number, cv.validate_esphome_version)("2025.5.0")
 
 CONFIG_SCHEMA = cv.All(
@@ -190,27 +202,30 @@ CONFIG_SCHEMA = cv.All(
             cv.Required(CONF_SECRET): valid_hexstring(CONF_SECRET, 32),
             cv.Optional(CONF_ADDRESS): cv.mac_address,
             cv.Optional(CONF_UUID): cv.uuid,
-            cv.Optional(CONF_LOCK): lock.lock_schema().extend(
-                {
-                    cv.GenerateID(): cv.declare_id(SesameLock),
-                    cv.Optional(CONF_TAG, default="ESPHome"): cv.string,
-                    cv.Optional(CONF_HISTORY_TAG): text_sensor.text_sensor_schema(),
-                    cv.Optional(CONF_HISTORY_TYPE): sensor.sensor_schema(
-                        unit_of_measurement=UNIT_EMPTY,
-                        device_class=DEVICE_CLASS_EMPTY,
-                        state_class=STATE_CLASS_NONE,
-                        accuracy_decimals=0,
-                    ),
-                    cv.Optional(CONF_TRIGGER_TYPE): sensor.sensor_schema(
-                        unit_of_measurement=UNIT_EMPTY,
-                        device_class=DEVICE_CLASS_EMPTY,
-                        state_class=STATE_CLASS_NONE,
-                        accuracy_decimals=0,
-                    ),
-                    cv.Optional(CONF_UNKNOWN_STATE_ALTERNATIVE): cv.enum(LOCK_STATES),
-                    cv.Optional(CONF_UNKNOWN_STATE_TIMEOUT, default="20s"): cv.positive_time_period_milliseconds,
-                    cv.Optional(CONF_FAST_NOTIFY, default=False): cv.boolean,
-                }
+            cv.Optional(CONF_LOCK): cv.All(
+                lock.lock_schema().extend(
+                    {
+                        cv.GenerateID(): cv.declare_id(SesameLock),
+                        cv.Optional(CONF_TAG, default="ESPHome"): cv.string,
+                        cv.Optional(CONF_HISTORY_TAG): text_sensor.text_sensor_schema(),
+                        cv.Optional(CONF_HISTORY_TYPE): sensor.sensor_schema(
+                            unit_of_measurement=UNIT_EMPTY,
+                            device_class=DEVICE_CLASS_EMPTY,
+                            state_class=STATE_CLASS_NONE,
+                            accuracy_decimals=0,
+                        ),
+                        cv.Optional(CONF_TRIGGER_TYPE): sensor.sensor_schema(
+                            unit_of_measurement=UNIT_EMPTY,
+                            device_class=DEVICE_CLASS_EMPTY,
+                            state_class=STATE_CLASS_NONE,
+                            accuracy_decimals=0,
+                        ),
+                        cv.Optional(CONF_UNKNOWN_STATE_ALTERNATIVE): cv.enum(LOCK_STATES),
+                        cv.Optional(CONF_UNKNOWN_STATE_TIMEOUT, default="20s"): cv.positive_time_period_milliseconds,
+                        cv.Optional(CONF_FAST_NOTIFY, default=False): cv.boolean,
+                    }
+                ),
+                validate_deprecation,
             ),
             cv.Optional(CONF_BOT): cv.Schema(
                 {
