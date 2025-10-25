@@ -4,16 +4,13 @@ esphome:
   platformio_options:
     build_flags:
       - -Wall -Wextra
-      - -DMBEDTLS_DEPRECATED_REMOVED -DCONFIG_BT_NIMBLE_ROLE_BROADCASTER_DISABLED -DCONFIG_BT_NIMBLE_ROLE_PERIPHERAL_DISABLED
-      # Configure the maximum number of connections as required (maximum: 9)
-      - -DCONFIG_BT_NIMBLE_MAX_CONNECTIONS=6
-      - -DCONFIG_MBEDTLS_CMAC_C	-DUSE_FRAMEWORK_MBEDTLS_CMAC
-  min_version: 2025.7.0
+      - -DUSE_FRAMEWORK_MBEDTLS_CMAC
+  min_version: 2025.10.0
 external_components:
   - source:
       type: git
       url: https://github.com/homy-newfs8/esphome-sesame3
-      ref: v0.23.0
+      ref: v0.24.0
     components: [sesame, sesame_ble]
   # - source: "components"
   #   components: [sesame, sesame_ble]
@@ -22,6 +19,14 @@ esp32:
   board: esp32-s3-devkitc-1
   framework:
     type: arduino
+    sdkconfig_options:
+      CONFIG_BT_ENABLED: y
+      CONFIG_BT_NIMBLE_ENABLED: y
+      # Configure the maximum number of connections as required (maximum: 9)
+      CONFIG_BT_NIMBLE_MAX_CONNECTIONS: "6"
+      CONFIG_BT_NIMBLE_CRYPTO_STACK_MBEDTLS: y
+      CONFIG_BT_NIMBLE_ROLE_BROADCASTER_DISABLED: y
+      CONFIG_BT_NIMBLE_ROLE_PERIPHERAL_DISABLED: y
 
 ota:
   - platform: esphome
@@ -55,7 +60,6 @@ logger:
 
 ## Enable Home Assistant API
 api:
-  password: !secret api_password
   ## Example service to lock/unlock with various history tags specified in Home Assistant.
   ## In Home Assistant, this service will be seen as `esphome.entrance_sesame_with_tag`
   services:
@@ -139,9 +143,6 @@ sesame:
     # timeout: 10s
     ## The ESP32 module will reboot after the specified number of connection failures (0 = do not reboot)
     # connect_retry_limit: 0
-    ## When SESAME lock state is not known (not connected), send specified state to HomeAssistant (instead of default NONE state)
-    ## (Candidates: NONE, LOCKED, UNLOCKED, JAMMED, LOCKING, UNLOCKING)
-    # unknown_state_alternative: NONE
     ## Send NONE(or alternative) state to HomeAssistant if disconnected from SESAME for specified time
     # unknown_state_timeout: 20s
 
@@ -155,7 +156,6 @@ sesame:
   #   public_key: !secret sesame3_pubkey
   #   secret: !secret sesame3_secret
   #   lock:
-  #     unknown_state_alternative: LOCKING
   #     name: Lock2
   #     id: lock_2
   #   connection_sensor:

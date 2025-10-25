@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.24.0] 2025-10-25
+- Update README for ESPHome 2025.10.0 or later.
+- Deprecate `unknown_state_alternative` option for lock.
+- Bump libsesame3bt libraries
+
 ## [v0.23.0] 2025-09-19
 - In case of a connection error or unexpected disconnection, battery-related sensors will immediately be issued with an `UNKNOWN` status.
 - When a lock becomes "UNKNOWN", the "UNKNOWN" state is issued to history-related sensors.

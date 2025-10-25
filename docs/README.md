@@ -8,13 +8,55 @@
 > components on the same ESP32. Use this component with a separate ESP32 device
 > from other BLE components.
 
-# ESPHome version requirement
-
-You need ESPHome 2025.7.0 or later to build this component. To use with versions between 2025.5.0 and 2025.6.3 see [below](#use-with-esphome-before-202570).
 
 # Setup this component
 
 You need to add compiler / library options to ESPHome base configuration, and `external_components` section link to this component.
+
+```yaml
+external_components:
+  - source:
+      type: git
+      url: https://github.com/homy-newfs8/esphome-sesame3
+      ref: v0.24.0
+    components: [ sesame, sesame_ble ]
+```
+
+Select the ESP32 board you want to use. Arduino framework is required.
+
+# Build options
+
+The build options differ depending on the version of ESPHome. See the example below.
+
+If you want to use more than four SESAME devices with one ESP32 module, edit the `CONFIG_BT_NIMBLE_MAX_CONNECTIUONS` parameter (It might be a good idea to check the free memory with ESPHome's [Debug](https://esphome.io/components/debug.html) component).
+
+## ESPHome 2025.10.0 or later
+
+NimBLE must be enabled by `sdkconfig_options`, and many compile options moved to `sdkconfig_options` section.
+
+```yaml
+esphome:
+  platformio_options:
+    build_flags:
+      - -Wall -Wextra
+      - -DUSE_FRAMEWORK_MBEDTLS_CMAC
+  min_version: 2025.10.0
+
+esp32:
+  board: esp32-c3-devkitm-1
+  framework:
+    type: arduino
+    sdkconfig_options:
+      CONFIG_BT_ENABLED: y
+      CONFIG_BT_NIMBLE_ENABLED: y
+      # Configure the maximum number of connections as required (maximum: 9)
+      CONFIG_BT_NIMBLE_MAX_CONNECTIONS: "6"
+      CONFIG_BT_NIMBLE_CRYPTO_STACK_MBEDTLS: y
+      CONFIG_BT_NIMBLE_ROLE_BROADCASTER_DISABLED: y
+      CONFIG_BT_NIMBLE_ROLE_PERIPHERAL_DISABLED: y
+```
+
+## ESPHome 2025.7.0 to 2025.9.x
 
 ```yaml
 esphome:
@@ -36,13 +78,28 @@ external_components:
   - source:
       type: git
       url: https://github.com/homy-newfs8/esphome-sesame3
-      ref: v0.23.0
+      ref: v0.24.0
     components: [ sesame, sesame_ble ]
 ```
 
-Select the ESP32 board you want to use. Arduino framework is required.
 
-If you want to use more than four SESAME devices with one ESP32 module, edit the `CONFIG_BT_NIMBLE_MAX_CONNECTIUONS` parameter (It might be a good idea to check the free memory with ESPHome's [Debug](https://esphome.io/components/debug.html) component).
+# ESPHome 2025.5.x to 2025.6.x
+
+```
+esphome:
+  platformio_options:
+    build_flags:
+      - -std=gnu++17 -Wall -Wextra
+      - -DMBEDTLS_DEPRECATED_REMOVED -DCONFIG_BT_NIMBLE_ROLE_BROADCASTER_DISABLED -DCONFIG_BT_NIMBLE_ROLE_PERIPHERAL_DISABLED
+# Configure the maximum number of connections as required
+      - -DCONFIG_BT_NIMBLE_MAX_CONNECTIONS=4
+    build_unflags:
+      - -std=gnu++11
+  min_version: 2025.5.0
+```
+
+(More older versions of ESPHome was supported by old versions of this component (not documented))
+
 
 # Configure for your SESAME
 
@@ -113,7 +170,8 @@ In addition to base [Lock](https://esphome.io/components/lock/#base-lock-configu
   * **name** (**Required**, string): The name of the history type sensor.
   * All other options from [sensor](https://esphome.io/components/sensor/#config-sensor)
 * **fast_notify** (*Optional*, bool): Notify lock status immediately on detecting status changed. If false and `history_tag` or `history_type` defined, lock notification is postponed until history information has been received. Default is `false`.
-* **unknown_state_alternative** (*Optional*, lock_state): If the lock state of SESAME is unknown (for example, before connecting or during disconnection), this module notifies HomeAssistant of the `NONE` state. Currently, HomeAssinstant seems to treat the `NONE` state as "Unlocked". <br/>
+* **unknown_state_alternative** (**Deprecated**, *Optional*, lock_state): (As of Home Assistant 2025.10.0, `NONE` state is properly treated as `UNKNOWN`)\
+If the lock state of SESAME is unknown (for example, before connecting or during disconnection), this module notifies HomeAssistant of the `NONE` state. Currently, HomeAssinstant seems to treat the `NONE` state as "Unlocked". <br/>
 If you don't want it to be treated as "Unlocked", you can send the unknown state as any other state (candidates: `NONE`, `LOCKED`, `UNLOCKED`, `JAMMED`, `LOCKING`, `UNLOCKING`). If not set as this variable, this module will not send `LOCKING` and `UNLOCKING`, so you can write automation scripts that interpret these values as "UNKNOWN".
 * **unknown_state_timeout** (*Optional*, [Time](https://esphome.io/guides/configuration-types#config-time)): If you do not want disconnection from SESAME to be immediately treated as unknown, set a timeout value with this variable. Defaults to `20s`.
 
@@ -386,7 +444,7 @@ Currently observed values.
 |     7 | Open Sensor                        | Open Sensor  |
 |     9 | Fingerprint failure / Close button | Face         |
 |    10 | CANDY HOUSE Remote                 | Remote       |
-|    11 | CANDY House Remote nano            | Remote nano  |
+|    11 | CANDY HOUSE Remote nano            | Remote nano  |
 |    14 | ANDROID_USER_BLE                   | Android      |
 |    16 | ANDROID_USER_WIFI                  | (from SDK)   |
 
@@ -567,23 +625,6 @@ sesame:
 ```
 
 This setting defers the connection to SESAME until the very end of ESPHome's initialization.
-
-# Use with ESPHome before 2025.7.0
-If you wanat to use with ESPHome version 2025.5.0～2025.6.3 replace esphome: section with below.
-(More older versions of ESPHome was supported by old versions of this component (not documented))
-
-```
-esphome:
-  platformio_options:
-    build_flags:
-      - -std=gnu++17 -Wall -Wextra
-      - -DMBEDTLS_DEPRECATED_REMOVED -DCONFIG_BT_NIMBLE_ROLE_BROADCASTER_DISABLED -DCONFIG_BT_NIMBLE_ROLE_PERIPHERAL_DISABLED
-# Configure the maximum number of connections as required
-      - -DCONFIG_BT_NIMBLE_MAX_CONNECTIONS=4
-    build_unflags:
-      - -std=gnu++11
-  min_version: 2025.5.0
-```
 
 # Schema changed on 0.10.0
 
