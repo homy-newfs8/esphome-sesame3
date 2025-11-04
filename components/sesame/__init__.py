@@ -3,7 +3,7 @@ import string
 
 from esphome import core
 import esphome.codegen as cg
-from esphome.components import binary_sensor, lock, sensor, text_sensor
+from esphome.components import binary_sensor, esp32, lock, sensor, text_sensor
 import esphome.config as esp_config
 import esphome.config_validation as cv
 from esphome.const import (
@@ -24,6 +24,7 @@ from esphome.const import (
     UNIT_PERCENT,
     UNIT_VOLT,
 )
+from esphome.core import CORE
 from esphome.cpp_generator import MockObjClass
 import esphome.final_validate as fv
 from esphome.types import ConfigType
@@ -263,7 +264,6 @@ CONFIG_SCHEMA = cv.All(
     validate_lockable,
     validate_always_connect,
     validate_bot_features,
-    cv.only_with_arduino,
 )
 
 
@@ -330,3 +330,7 @@ async def to_code(config):
     # cg.add_library("libsesame3bt-core", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt-core")
     # cg.add_library("libsesame3bt-server", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt-server")
     # cg.add_platformio_option("lib_ldf_mode", "deep")
+
+    if CORE.using_esp_idf:
+        esp32.add_idf_component(name="h2zero/esp-nimble-cpp", ref="2.3.2")
+        CORE.add_platformio_option("lib_ignore", "NimBLE-Arduino")
