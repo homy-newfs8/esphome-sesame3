@@ -22,13 +22,13 @@ external_components:
     components: [ sesame, sesame_ble ]
 ```
 
-Select the ESP32 board you want to use. Arduino framework is required.
-
 # Build options
 
 The build options differ depending on the version of ESPHome. See the example below.
 
 If you want to use more than four SESAME devices with one ESP32 module, edit the `CONFIG_BT_NIMBLE_MAX_CONNECTIUONS` parameter (It might be a good idea to check the free memory with ESPHome's [Debug](https://esphome.io/components/debug.html) component).
+
+Select the ESP32 board you want to use. Choose Arduino or ESP-IDF framework.
 
 ## ESPHome 2025.10.0 or later
 
@@ -56,6 +56,8 @@ esp32:
       CONFIG_BT_NIMBLE_ROLE_PERIPHERAL_DISABLED: y
 ```
 
+You can select `esp-idf` instead of arduino.
+
 ## ESPHome 2025.7.0 to 2025.9.x
 
 ```yaml
@@ -78,7 +80,7 @@ external_components:
   - source:
       type: git
       url: https://github.com/homy-newfs8/esphome-sesame3
-      ref: v0.24.0
+      ref: v0.25.0
     components: [ sesame, sesame_ble ]
 ```
 
@@ -166,7 +168,8 @@ In addition to base [Lock](https://esphome.io/components/lock/#base-lock-configu
 * **history_type** (*Optional*, [Sensor](https://esphome.io/components/sensor/#config-sensor)): See [below](#operation-history-tag-and-history-type)
   * **name** (**Required**, string): The name of the history type sensor.
   * All other options from [sensor](https://esphome.io/components/sensor/#config-sensor)
-* **trigger_type** (*Optional*, [Sensor](https://esphome.io/components/sensor/#config-sensor)): See [below](#operation-history-tag-and-history-type)
+* **trigger_type** (*Optional*, Sensor): Deprecated. Use history_tag_type instead.
+* **history_tag_type** (*Optional*, [Sensor](https://esphome.io/components/sensor/#config-sensor)): See [below](#history-tag-uuid-and-history-tag-type)
   * **name** (**Required**, string): The name of the history type sensor.
   * All other options from [sensor](https://esphome.io/components/sensor/#config-sensor)
 * **fast_notify** (*Optional*, bool): Notify lock status immediately on detecting status changed. If false and `history_tag` or `history_type` defined, lock notification is postponed until history information has been received. Default is `false`.
@@ -328,7 +331,7 @@ sesame:
 ```
 # Operation History TAG and History type
 
-> [!NOTE] As of the May 2025 firmware, the TAG string specification for CANDY HOUSE devices has changed. See [TAG UUID](#history-tag-uuid-and-trigger-type).
+> [!NOTE] As of the May 2025 firmware, the TAG string specification for CANDY HOUSE devices has changed. See [TAG UUID](#history-tag-uuid-and-history-tag-type).
 
 You can expose who or what operated SESAME. These values are updated before lock/unlock state. Therefore, you can use history values in your automation's lock state change actions (You can change this "notify state after tag" behavior by `fast_notify` option).
 
@@ -376,14 +379,14 @@ History is Lock specific feature, so define these sensors under `lock:` object.
 |    18 | BLE_CLICK             | SESAME bot (Not listed in Android API)                         |
 |    21 | DRIVE_CLICKED         | SESAME bot (Not listed in Android API)                         |
 
-## History TAG UUID and trigger type
+## History TAG UUID and history tag type
 
 In the original specification, trigger devices (Touch, Remote, Open Sensor) sent their own name or the registered trigger (fingerprint, IC card) name to the SESAME lock/bot. In May 2025, this specification was changed, and trigger devices now send UUIDs instead of their own names or trigger names (and of cource Face).
 
-A similar change was applied to history retrieval. Therefore, there are two types of history tag values ​​that this component receives (the value of the history type does not seem to have changed).
+A similar change was applied to history retrieval. Therefore, there are two types of history tag values ​​that this component receives.
 
 1. Literal string (0～30letters)
-1. UUID (128bits) + Trigger type
+1. UUID (128bits) + History tag type
 
 
 ```mermaid
@@ -400,7 +403,7 @@ esphome[esphome-sesame3]
 lock -->|TAG string or<br/>TAG UUID + trigger_type| esphome
 ```
 
-On ESPHome, your can determine which type is received by `trigger_type` value.
+On ESPHome, `history_tag_type` is represented with float value, and your can determine which history tag type is received by it's value.
 
 ```yaml
 # define lock
@@ -414,40 +417,46 @@ sesame:
     history_type:
       id: history_type_1
       name: history type 1
-    trigger_type:
-      id: trigger_type_1
-      name: trigger type 1
+    history_tag_type:
+      id: history_tag_type_1
+      name: history tag type 1
       on_value:
       then:
       - lambda: |-
-          if (std::isnan(id(trigger_type_1).state)) {
+          if (std::isnan(id(history_tag_type_1).state)) {
             // TAG string received
             ESP_LOGD("test", "tag string = %s", id(history_tag_1).state.c_str());
           } else {
-            // TAG UUID + trigger_type received
-            ESP_LOGD("test", "uuid = %s, type = %d", id(history_tag_1).state.c_str(), (int)id(trigger_type_1).state);
+            // TAG UUID + history_tag_type received
+            ESP_LOGD("test", "uuid = %s, type = %d", id(history_tag_1).state.c_str(), (int)id(history_tag_type_1).state);
           }
 
 ```
 
-### Trigger type values
+### History tag type values
 
 Currently observed values.
 
-| Value | Name                               | Device       |
-| ----: | ---------------------------------- | ------------ |
-|     0 | IC Card                            | Touch / Face |
-|     1 | Fingerprint                        | Face         |
-|     3 | Face                               | Face         |
-|     4 | Vein                               | Face         |
-|     6 | Fingerprint / Fingerprint failure  | Touch        |
-|     7 | Open Sensor                        | Open Sensor  |
-|     9 | Fingerprint failure / Close button | Face         |
-|    10 | CANDY HOUSE Remote                 | Remote       |
-|    11 | CANDY HOUSE Remote nano            | Remote nano  |
-|    14 | ANDROID_USER_BLE                   | Android      |
-|    16 | ANDROID_USER_WIFI                  | (from SDK)   |
-
+| Value | Name           | Device               |
+| ----: | -------------- | -------------------- |
+|     0 | nfc_card       | Touch / Face         |
+|     1 | fingerprint    | Touch / Face         |
+|     2 | password       | Touch PRO / Face PRO |
+|     3 | face           | Face                 |
+|     4 | palm_vein      | Face                 |
+|     5 | touch_pro_lock | Touch PRO            |
+|     6 | touch_lock     | Touch                |
+|     7 | open_sensor    | Open Sensor          |
+|     8 | face_pro_lock  | Face PRO             |
+|     9 | face_lock      | Face                 |
+|    10 | remote         | Remote               |
+|    11 | remote_nano    | Remote nano          |
+|    12 | biz_user       |                      |
+|    13 | web_api        |                      |
+|    14 | android_ble    |                      |
+|    15 | ios_ble        |                      |
+|    16 | android_wifi   |                      |
+|    17 | ios_wifi       |                      |
 
 # SESAME bot usage
 
@@ -571,6 +580,15 @@ data:
   is_lock: "{{ not is_state('lock.entrance_lock1', 'locked') }}"
   tag: "***Anything***"
 ```
+
+You can make lambda call `lock`/`unlock` with history_tag_type and tag.
+
+```yaml
+id(lock_1).lock(history_tag_type, tag);
+id(lock_1).unlock(history_tag_type, tag);
+```
+
+See [explanation of history_tag_type](#history-tag-uuid-and-history-tag-type). It's useful when relaying requests in [esphome-sesame_server](https://github.com/homy-newfs8/esphome-sesame_server).
 
 # Multiple SESAME conotrol
 

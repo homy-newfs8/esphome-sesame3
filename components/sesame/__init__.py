@@ -62,6 +62,7 @@ CONF_BATTERY_VOLTAGE = "battery_voltage"
 CONF_BATTERY_CRITICAL = "battery_critical"
 CONF_HISTORY_TAG = "history_tag"
 CONF_HISTORY_TYPE = "history_type"
+CONF_HISTORY_TAG_TYPE = "history_tag_type"
 CONF_TRIGGER_TYPE = "trigger_type"
 CONF_CONNECT_RETRY_LIMIT = "connect_retry_limit"
 CONF_UNKNOWN_STATE_ALTERNATIVE = "unknown_state_alternative"
@@ -189,6 +190,13 @@ def validate_deprecation(config: ConfigType) -> ConfigType:
             f"The option '{CONF_UNKNOWN_STATE_ALTERNATIVE}' is deprecated."
             " As of Home Assistant 2025.10.0, The `unknown` state is properly treated as `unknown`."
         )
+    if CONF_TRIGGER_TYPE in config:
+        if CONF_HISTORY_TAG_TYPE in config:
+            raise cv.Invalid(f"Cannot define both '{CONF_TRIGGER_TYPE}' and '{CONF_HISTORY_TAG_TYPE}'. Please use only '{CONF_HISTORY_TAG_TYPE}'.")
+        config[CONF_HISTORY_TAG_TYPE] = config.pop(CONF_TRIGGER_TYPE)
+        _LOGGER.warning(
+            f"The option '{CONF_TRIGGER_TYPE}' is deprecated. Please use '{CONF_HISTORY_TAG_TYPE}' instead. `{CONF_TRIGGER_TYPE}` will be removed in future releases."
+        )
     return config
 
 
@@ -216,6 +224,12 @@ CONFIG_SCHEMA = cv.All(
                             accuracy_decimals=0,
                         ),
                         cv.Optional(CONF_TRIGGER_TYPE): sensor.sensor_schema(
+                            unit_of_measurement=UNIT_EMPTY,
+                            device_class=DEVICE_CLASS_EMPTY,
+                            state_class=STATE_CLASS_NONE,
+                            accuracy_decimals=0,
+                        ),
+                        cv.Optional(CONF_HISTORY_TAG_TYPE): sensor.sensor_schema(
                             unit_of_measurement=UNIT_EMPTY,
                             device_class=DEVICE_CLASS_EMPTY,
                             state_class=STATE_CLASS_NONE,
@@ -302,9 +316,9 @@ async def to_code(config):
         if CONF_HISTORY_TYPE in lconfig:
             s = await sensor.new_sensor(lconfig[CONF_HISTORY_TYPE])
             cg.add(lck.set_history_type_sensor(s))
-        if CONF_TRIGGER_TYPE in lconfig:
-            s = await sensor.new_sensor(lconfig[CONF_TRIGGER_TYPE])
-            cg.add(lck.set_trigger_type_sensor(s))
+        if CONF_HISTORY_TAG_TYPE in lconfig:
+            s = await sensor.new_sensor(lconfig[CONF_HISTORY_TAG_TYPE])
+            cg.add(lck.set_history_tag_type_sensor(s))
         if CONF_UNKNOWN_STATE_ALTERNATIVE in lconfig:
             cg.add(lck.set_unknown_state_alternative(lconfig[CONF_UNKNOWN_STATE_ALTERNATIVE]))
         if CONF_UNKNOWN_STATE_TIMEOUT in lconfig:
@@ -325,7 +339,7 @@ async def to_code(config):
     uuid = str(config[CONF_UUID]) if CONF_UUID in config else ""
     cg.add(var.init(config[CONF_MODEL], config[CONF_PUBLIC_KEY], config[CONF_SECRET], address, uuid))
 
-    cg.add_library("libsesame3bt", None, "https://github.com/homy-newfs8/libsesame3bt#0.29.0")
+    cg.add_library("libsesame3bt", None, "https://github.com/homy-newfs8/libsesame3bt#0.30.0")
     # cg.add_library("libsesame3bt", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt")
     # cg.add_library("libsesame3bt-core", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt-core")
     # cg.add_library("libsesame3bt-server", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt-server")

@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.25.0] 2025-11-05
+- Support esp-idf framework
+- Rename `trigger_type` to `history_tag_type`.
+- Add `lock/unlock` method overloads.
+
 ## [v0.24.0] 2025-10-25
 - Update README for ESPHome 2025.10.0 or later.
 - Deprecate `unknown_state_alternative` option for lock.

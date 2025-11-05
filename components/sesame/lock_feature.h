@@ -25,10 +25,12 @@ class SesameLock : public lock::Lock, public Feature {
 	using lock::Lock::unlock;
 	void lock(std::string_view tag);
 	void unlock(std::string_view tag);
+	void lock(float history_tag_type, std::string_view tag);
+	void unlock(float history_tag_type, std::string_view tag);
 	void open(std::string_view tag);
 	void set_history_tag_sensor(text_sensor::TextSensor* sensor) { history_tag_sensor = sensor; }
 	void set_history_type_sensor(sensor::Sensor* sensor) { history_type_sensor = sensor; }
-	void set_trigger_type_sensor(sensor::Sensor* sensor) { trigger_type_sensor = sensor; }
+	void set_history_tag_type_sensor(sensor::Sensor* sensor) { history_tag_type_sensor = sensor; }
 	void set_unknown_state_alternative(lock::LockState alternative) { unknown_state_alternative = alternative; }
 	void set_unknown_state_timeout(uint32_t timeout) { unknown_state_timeout = timeout; }
 	void set_fast_notify(bool fast_notify) { this->fast_notify = fast_notify; }
@@ -44,9 +46,9 @@ class SesameLock : public lock::Lock, public Feature {
 	uint32_t last_history_requested = 0;
 	text_sensor::TextSensor* history_tag_sensor = nullptr;
 	sensor::Sensor* history_type_sensor = nullptr;
-	sensor::Sensor* trigger_type_sensor = nullptr;
+	sensor::Sensor* history_tag_type_sensor = nullptr;
 	libsesame3bt::Sesame::history_type_t recv_history_type = libsesame3bt::Sesame::history_type_t::none;
-	std::optional<libsesame3bt::trigger_type_t> recv_trigger_type = std::nullopt;
+	std::optional<libsesame3bt::history_tag_type_t> recv_history_tag_type = std::nullopt;
 	std::string recv_history_tag;
 	lock::LockState lock_state = lock::LockState::LOCK_STATE_NONE;
 	lock::LockState unknown_state_alternative = lock::LockState::LOCK_STATE_NONE;

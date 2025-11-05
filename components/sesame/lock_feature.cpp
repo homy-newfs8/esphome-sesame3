@@ -1,6 +1,7 @@
 #include "lock_feature.h"
 #include <esphome/core/hal.h>
 #include <esphome/core/log.h>
+#include <cmath>
 #include "sesame_component.h"
 
 using esphome::lock::LockState;
@@ -40,7 +41,7 @@ SesameLock::init() {
 			if (history.result == Sesame::result_code_t::success) {
 				if (history.type != Sesame::history_type_t::drive_locked && history.type != Sesame::history_type_t::drive_unlocked &&
 				    history.type != Sesame::history_type_t::drive_clicked) {
-					recv_trigger_type = history.trigger_type;
+					recv_history_tag_type = history.history_tag_type;
 					recv_history_type = history.type;
 					recv_history_tag.assign(history.tag, history.tag_len);
 				}
@@ -83,7 +84,7 @@ SesameLock::handle_bot_history(const SesameClient::History& history) {
 		if (history.type == Sesame::history_type_t::drive_locked || history.type == Sesame::history_type_t::drive_unlocked ||
 		    history.type == Sesame::history_type_t::drive_clicked) {
 		} else {
-			recv_trigger_type = history.trigger_type;
+			recv_history_tag_type = history.history_tag_type;
 			recv_history_type = history.type;
 			recv_history_tag.assign(history.tag, history.tag_len);
 		}
@@ -171,6 +172,70 @@ SesameLock::open(std::string_view tag) {
 	parent_->sesame.click(tag);
 }
 
+static int8_t
+nibble(char c) {
+	if (c >= '0' && c <= '9') {
+		return c - '0';
+	}
+	if (c >= 'A' && c <= 'F') {
+		return c - 'A' + 10;
+	}
+	if (c >= 'a' && c <= 'f') {
+		return c - 'a' + 10;
+	}
+	return -1;
+}
+static bool
+hex2bin(std::string_view str, std::byte* out, size_t limit) {
+	if (str.length() != limit * 2) {
+		return false;
+	}
+	size_t olen = str.length() / 2;
+	for (int i = 0; i < olen; i++) {
+		int8_t n1 = nibble(str[i * 2]);
+		int8_t n2 = nibble(str[i * 2 + 1]);
+		if (n1 < 0 || n2 < 0) {
+			return false;
+		}
+		out[i] = std::byte{static_cast<uint8_t>((n1 << 4) + n2)};
+	}
+	return true;
+}
+
+void
+SesameLock::lock(float history_tag_type, std::string_view tag) {
+	if (!operable_warn()) {
+		return;
+	}
+	if (std::isnan(history_tag_type)) {
+		parent_->sesame.lock(tag);
+		return;
+	}
+	std::array<std::byte, libsesame3bt::HISTORY_TAG_UUID_SIZE> uuid;
+	if (hex2bin(tag, uuid.data(), uuid.size()) == false) {
+		ESP_LOGW(TAG, "Invalid history tag format, must be hex string");
+		return;
+	}
+	parent_->sesame.lock(static_cast<libsesame3bt::history_tag_type_t>(history_tag_type), uuid);
+}
+
+void
+SesameLock::unlock(float history_tag_type, std::string_view tag) {
+	if (!operable_warn()) {
+		return;
+	}
+	if (std::isnan(history_tag_type)) {
+		parent_->sesame.lock(tag);
+		return;
+	}
+	std::array<std::byte, libsesame3bt::HISTORY_TAG_UUID_SIZE> uuid;
+	if (hex2bin(tag, uuid.data(), uuid.size()) == false) {
+		ESP_LOGW(TAG, "Invalid history tag format, must be hex string");
+		return;
+	}
+	parent_->sesame.unlock(static_cast<libsesame3bt::history_tag_type_t>(history_tag_type), uuid);
+}
+
 void
 SesameLock::reflect_status_changed() {
 	const auto& sesame_status = parent_->sesame_status;
@@ -243,8 +308,8 @@ SesameLock::publish_lock_history_state() {
 	if (history_tag_sensor) {
 		history_tag_sensor->publish_state(recv_history_tag);
 	}
-	if (trigger_type_sensor) {
-		trigger_type_sensor->publish_state(recv_trigger_type.has_value() ? static_cast<uint8_t>(*recv_trigger_type) : NAN);
+	if (history_tag_type_sensor) {
+		history_tag_type_sensor->publish_state(recv_history_tag_type.has_value() ? static_cast<uint8_t>(*recv_history_tag_type) : NAN);
 	}
 	if (history_type_sensor) {
 		history_type_sensor->publish_state(static_cast<uint8_t>(recv_history_type));
@@ -280,7 +345,7 @@ SesameLock::history_type_matched(lock::LockState state, Sesame::history_type_t t
 
 void
 SesameLock::clear_history() {
-	recv_trigger_type = std::nullopt;
+	recv_history_tag_type = std::nullopt;
 	recv_history_type = Sesame::history_type_t::none;
 	recv_history_tag.clear();
 }
