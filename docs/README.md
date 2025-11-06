@@ -435,7 +435,7 @@ sesame:
 
 ### History tag type values
 
-Currently observed values.
+Cited from [Protocol specification](https://github.com/CANDY-HOUSE/API_document/blob/master/SesameOS3/4_history.en.md#history-tag-types).
 
 | Value | Name           | Device               |
 | ----: | -------------- | -------------------- |
