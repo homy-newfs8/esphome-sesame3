@@ -30,6 +30,8 @@ model_str(Sesame::model_t model) {
 			return "4";
 		case Sesame::model_t::sesame_5:
 			return "5";
+		case Sesame::modl_t::bike_2:
+			return "Bike 2";
 		case Sesame::model_t::sesame_5_pro:
 			return "5 PRO";
 		case Sesame::model_t::open_sensor_1:
@@ -38,6 +40,30 @@ model_str(Sesame::model_t model) {
 			return "Touch PRO";
 		case Sesame::model_t::sesame_touch:
 			return "Touch";
+		case Sesame::model_t::hub3:
+			return "Hub 3";
+		case Sesame::model_t::remote:
+			return "Remote";
+		case Sesame::model_t::remote_nano:
+			return "Remote Nano";
+		case Sesame::model_t::sesame_5_us:
+			return "5 US";
+		case Sesame::model_t::sesame_bot_2:
+			return "Bot 2";
+		case Sesame::model_t::sesame_face_pro:
+			return "Face PRO";
+		case Sesame::model_t::sesame_face:
+			return "Face";
+		case Sesame::model_t::sesame_6:
+			return "6";
+		case Sesame::model_t::sesame_6_pro:
+			return "6 PRO";
+		case Sesame::model_t::sesame_face_pro_ai:
+			return "Face PRO AI";
+		case Sesame::model_t::sesame_face_ai:
+			return "Face AI";
+		case Sesame::model_t::open_sensor_2:
+			return "Open Sensor 2";
 		default:
 			return "UNKNOWN";
 	}

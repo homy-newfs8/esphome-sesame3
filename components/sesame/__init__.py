@@ -92,6 +92,8 @@ SESAME_MODELS = {
     "remote": SesameModel_t.remote,
     "sesame_face_pro": SesameModel_t.sesame_face_pro,
     "sesame_face": SesameModel_t.sesame_face,
+    "sesame_face_pro_ai": SesameModel_t.sesame_face_pro_ai,
+    "sesame_face_ai": SesameModel_t.sesame_face_ai,
 }
 
 
@@ -339,7 +341,7 @@ async def to_code(config):
     uuid = str(config[CONF_UUID]) if CONF_UUID in config else ""
     cg.add(var.init(config[CONF_MODEL], config[CONF_PUBLIC_KEY], config[CONF_SECRET], address, uuid))
 
-    cg.add_library("libsesame3bt", None, "https://github.com/homy-newfs8/libsesame3bt#0.30.0")
+    cg.add_library("libsesame3bt", None, "https://github.com/homy-newfs8/libsesame3bt#0.30.1")
     # cg.add_library("libsesame3bt", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt")
     # cg.add_library("libsesame3bt-core", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt-core")
     # cg.add_library("libsesame3bt-server", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt-server")

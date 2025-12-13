@@ -128,7 +128,7 @@ See [below](#identify-parameter-values-for-sesame-devices) for information on ho
 
 ## Configuration variables
 
-* **model** (**Required**): Model of SESAME. Use one of: `sesame_5`, `sesame_5_pro`, `sesame_bot_2`, `sesame_bike_2`, `sesame_face`, `sesame_face_pro`,`sesame_touch`, `sesame_touch_pro`, `remote`, `sesame_4`, `sesame_3`, `sesame_bot`, `sesame_bike`
+* **model** (**Required**): Model of SESAME. Use one of: `sesame_5`, `sesame_5_pro`, `sesame_bot_2`, `sesame_bike_2`, `sesame_face`, `sesame_face_pro`,`sesame_touch`, `sesame_touch_pro`, `remote`, `sesame_face`, `sesame_face_pro`, `sesame_face_ai`, `sesame_face_pro_ai`, `sesame_4`, `sesame_3`, `sesame_bot`, `sesame_bike`
 * **uuid** (**Optional**, string): UUID of SESAME. `uuid` or `address` must be specified, see [below](#identify-parameter-values-for-sesame-devices).
 * **address** (**Optional** for SESAME OS3 models, **Required** for SESAME OS2 models, string): Bluetooth MAC Address of SESAME. `uuid` or `address` must be specified, see [below](#identify-parameter-values-for-sesame-devices).
 * **secret** (**Required**, string): See [below](#identify-parameter-values-for-sesame-devices).
@@ -157,7 +157,7 @@ See [below](#identify-parameter-values-for-sesame-devices) for information on ho
 
 ## Lock specific variables
 
-For lock devices (`sesame_5`, `sesame_5_pro`, `sesame_4`, `sesame_3`, `sesame_bot`, `sesame_bike`), lock functionality can be used.
+For lock devices (`sesame_5`, `sesame_5_pro`, `sesame_4`, `sesame_3`, `sesame_bot`, `sesame_bike`, `sesame_bike_2`), lock functionality can be used.
 
 In addition to base [Lock](https://esphome.io/components/lock/#base-lock-configuration) variables:
 

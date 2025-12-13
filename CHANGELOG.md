@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.25.1] 2025-12-13
+- Fix UUID history_tag not retrieved for operation by updated devices (Touch / Remote / Face).
+- Add `sesame_face_pro_ai`, `sesame_face_ai` symbols.
+
 ## [v0.25.0] 2025-11-05
 - Support esp-idf framework
 - Rename `trigger_type` to `history_tag_type`.
