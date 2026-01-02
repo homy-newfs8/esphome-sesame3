@@ -6,8 +6,10 @@
 
 using esphome::lock::LockState;
 using model_t = libsesame3bt::Sesame::model_t;
+using history_tag_type_t = libsesame3bt::history_tag_type_t;
 using libsesame3bt::Sesame;
 using libsesame3bt::SesameClient;
+using Status = SesameClient::Status;
 
 namespace {
 
@@ -32,8 +34,8 @@ SesameLock::init() {
 	if (using_history()) {
 		recv_history_tag.reserve(SesameClient::MAX_CMD_TAG_SIZE + 1);
 		parent_->sesame.set_history_callback([this](auto& client, const auto& history) {
-			ESP_LOGD(TAG, "hist: r=%u, id=%ld, type=%u, str=(%u)%.*s", static_cast<uint8_t>(history.result), history.record_id,
-			         static_cast<uint8_t>(history.type), history.tag_len, history.tag_len, history.tag);
+			ESP_LOGD(TAG, "hist: r=%u,id=%ld,type=%u,str=(%u)%.*s,svol=%.2f", static_cast<uint8_t>(history.result), history.record_id,
+			         static_cast<uint8_t>(history.type), history.tag_len, history.tag_len, history.tag, history.scaled_voltage);
 			if (is_bot1()) {
 				handle_bot_history(history);
 				return;
@@ -44,6 +46,7 @@ SesameLock::init() {
 					recv_history_tag_type = history.history_tag_type;
 					recv_history_type = history.type;
 					recv_history_tag.assign(history.tag, history.tag_len);
+					recv_scaled_voltage = history.scaled_voltage;
 				}
 				if (last_history_requested > 0 && history_type_matched(lock_state, recv_history_type)) {
 					last_history_requested = 0;
@@ -87,6 +90,7 @@ SesameLock::handle_bot_history(const SesameClient::History& history) {
 			recv_history_tag_type = history.history_tag_type;
 			recv_history_type = history.type;
 			recv_history_tag.assign(history.tag, history.tag_len);
+			recv_scaled_voltage = history.scaled_voltage;
 		}
 		if (last_history_requested > 0) {
 			last_history_requested = 0;
@@ -141,7 +145,7 @@ SesameLock::publish_lock_state(bool force_publish) {
 		st = unknown_state_alternative;
 	}
 	if (state == st && force_publish) {
-		ESP_LOGD(TAG, "'%s': (Force) Sending state %s", this->name_.c_str(), lock_state_to_string(state));
+		ESP_LOGD(TAG, "'%s': (Force) Sending state %s", this->name_.c_str(), LOG_STR_ARG(lock_state_to_string(state)));
 		state_callback_.call();
 	}
 	publish_state(st);
@@ -216,7 +220,7 @@ SesameLock::lock(float history_tag_type, std::string_view tag) {
 		ESP_LOGW(TAG, "Invalid history tag format, must be hex string");
 		return;
 	}
-	parent_->sesame.lock(static_cast<libsesame3bt::history_tag_type_t>(history_tag_type), uuid);
+	parent_->sesame.lock(static_cast<history_tag_type_t>(history_tag_type), uuid);
 }
 
 void
@@ -233,7 +237,7 @@ SesameLock::unlock(float history_tag_type, std::string_view tag) {
 		ESP_LOGW(TAG, "Invalid history tag format, must be hex string");
 		return;
 	}
-	parent_->sesame.unlock(static_cast<libsesame3bt::history_tag_type_t>(history_tag_type), uuid);
+	parent_->sesame.unlock(static_cast<history_tag_type_t>(history_tag_type), uuid);
 }
 
 void
@@ -306,16 +310,45 @@ SesameLock::update_lock_state(lock::LockState new_state) {
 void
 SesameLock::publish_lock_history_state() {
 	if (history_tag_sensor) {
-		history_tag_sensor->publish_state(recv_history_tag);
+		history_tag_sensor->state = recv_history_tag;
 	}
 	if (history_tag_type_sensor) {
-		history_tag_type_sensor->publish_state(recv_history_tag_type.has_value() ? static_cast<uint8_t>(*recv_history_tag_type) : NAN);
+		history_tag_type_sensor->state = recv_history_tag_type.has_value() ? static_cast<uint8_t>(*recv_history_tag_type) : NAN;
 	}
 	if (history_type_sensor) {
-		history_type_sensor->publish_state(static_cast<uint8_t>(recv_history_type));
+		history_type_sensor->state = static_cast<uint8_t>(recv_history_type);
+	}
+	if (history_scaled_voltage_sensor) {
+		history_scaled_voltage_sensor->state = recv_scaled_voltage;
+	}
+	if (history_battery_pct_sensor) {
+		if (std::isfinite(recv_scaled_voltage) && recv_history_tag_type.has_value()) {
+			if (*recv_history_tag_type == history_tag_type_t::open_sensor || *recv_history_tag_type == history_tag_type_t::remote_nano) {
+				history_battery_pct_sensor->state = Status::scaled_voltage_to_pct(recv_scaled_voltage, Sesame::model_t::open_sensor_1);
+			} else {
+				history_battery_pct_sensor->state = Status::scaled_voltage_to_pct(recv_scaled_voltage, Sesame::model_t::sesame_5);
+			}
+		} else {
+			history_battery_pct_sensor->state = NAN;
+		}
 	}
 	if (!fast_notify) {
 		publish_lock_state(is_bot1());
+	}
+	if (history_tag_sensor) {
+		history_tag_sensor->publish_state(history_tag_sensor->state);
+	}
+	if (history_tag_type_sensor) {
+		history_tag_type_sensor->publish_state(history_tag_type_sensor->state);
+	}
+	if (history_type_sensor) {
+		history_type_sensor->publish_state(history_type_sensor->state);
+	}
+	if (history_scaled_voltage_sensor) {
+		history_scaled_voltage_sensor->publish_state(history_scaled_voltage_sensor->state);
+	}
+	if (history_battery_pct_sensor) {
+		history_battery_pct_sensor->publish_state(history_battery_pct_sensor->state);
 	}
 }
 
@@ -348,6 +381,7 @@ SesameLock::clear_history() {
 	recv_history_tag_type = std::nullopt;
 	recv_history_type = Sesame::history_type_t::none;
 	recv_history_tag.clear();
+	recv_scaled_voltage = NAN;
 }
 
 void

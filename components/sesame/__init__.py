@@ -51,6 +51,7 @@ sesame_lock_ns = cg.esphome_ns.namespace("sesame_lock")
 SesameComponent = sesame_lock_ns.class_("SesameComponent", cg.PollingComponent)
 SesameLock = sesame_lock_ns.class_("SesameLock", lock.Lock)
 BotFeature = sesame_lock_ns.class_("BotFeature")
+BinarySensorWithInvalidate = sesame_lock_ns.class_("BinarySensorWithInvalidate", binary_sensor.BinarySensor)
 
 sesame_server_ns = cg.esphome_ns.namespace("sesame_server")
 SesameServerComponent = sesame_server_ns.class_("SesameServerComponent")
@@ -63,6 +64,8 @@ CONF_BATTERY_CRITICAL = "battery_critical"
 CONF_HISTORY_TAG = "history_tag"
 CONF_HISTORY_TYPE = "history_type"
 CONF_HISTORY_TAG_TYPE = "history_tag_type"
+CONF_HISTORY_SCALED_VOLTAGE = "history_scaled_voltage"
+CONF_HISTORY_BATTERY_PCT = "history_battery_pct"
 CONF_TRIGGER_TYPE = "trigger_type"
 CONF_CONNECT_RETRY_LIMIT = "connect_retry_limit"
 CONF_UNKNOWN_STATE_ALTERNATIVE = "unknown_state_alternative"
@@ -237,6 +240,18 @@ CONFIG_SCHEMA = cv.All(
                             state_class=STATE_CLASS_NONE,
                             accuracy_decimals=0,
                         ),
+                        cv.Optional(CONF_HISTORY_SCALED_VOLTAGE): sensor.sensor_schema(
+                            unit_of_measurement=UNIT_VOLT,
+                            device_class=DEVICE_CLASS_VOLTAGE,
+                            state_class=STATE_CLASS_MEASUREMENT,
+                            accuracy_decimals=2,
+                        ),
+                        cv.Optional(CONF_HISTORY_BATTERY_PCT): sensor.sensor_schema(
+                            unit_of_measurement=UNIT_PERCENT,
+                            device_class=DEVICE_CLASS_BATTERY,
+                            state_class=STATE_CLASS_MEASUREMENT,
+                            accuracy_decimals=1,
+                        ),
                         cv.Optional(CONF_UNKNOWN_STATE_ALTERNATIVE): cv.enum(LOCK_STATES),
                         cv.Optional(CONF_UNKNOWN_STATE_TIMEOUT, default="20s"): cv.positive_time_period_milliseconds,
                         cv.Optional(CONF_FAST_NOTIFY, default=False): cv.boolean,
@@ -265,6 +280,7 @@ CONFIG_SCHEMA = cv.All(
                 accuracy_decimals=2,
             ),
             cv.Optional(CONF_BATTERY_CRITICAL): binary_sensor.binary_sensor_schema(
+                class_=BinarySensorWithInvalidate,
                 device_class=DEVICE_CLASS_BATTERY,
             ),
             cv.Optional(CONF_CONNECT_RETRY_LIMIT): cv.int_range(min=0, max=65535),
@@ -321,6 +337,12 @@ async def to_code(config):
         if CONF_HISTORY_TAG_TYPE in lconfig:
             s = await sensor.new_sensor(lconfig[CONF_HISTORY_TAG_TYPE])
             cg.add(lck.set_history_tag_type_sensor(s))
+        if CONF_HISTORY_SCALED_VOLTAGE in lconfig:
+            s = await sensor.new_sensor(lconfig[CONF_HISTORY_SCALED_VOLTAGE])
+            cg.add(lck.set_history_scaled_voltage_sensor(s))
+        if CONF_HISTORY_BATTERY_PCT in lconfig:
+            s = await sensor.new_sensor(lconfig[CONF_HISTORY_BATTERY_PCT])
+            cg.add(lck.set_history_battery_pct_sensor(s))
         if CONF_UNKNOWN_STATE_ALTERNATIVE in lconfig:
             cg.add(lck.set_unknown_state_alternative(lconfig[CONF_UNKNOWN_STATE_ALTERNATIVE]))
         if CONF_UNKNOWN_STATE_TIMEOUT in lconfig:
@@ -341,11 +363,11 @@ async def to_code(config):
     uuid = str(config[CONF_UUID]) if CONF_UUID in config else ""
     cg.add(var.init(config[CONF_MODEL], config[CONF_PUBLIC_KEY], config[CONF_SECRET], address, uuid))
 
-    cg.add_library("libsesame3bt", None, "https://github.com/homy-newfs8/libsesame3bt#0.30.1")
-    # cg.add_library("libsesame3bt", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt")
-    # cg.add_library("libsesame3bt-core", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt-core")
-    # cg.add_library("libsesame3bt-server", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt-server")
-    # cg.add_platformio_option("lib_ldf_mode", "deep")
+    # cg.add_library("libsesame3bt", None, "https://github.com/homy-newfs8/libsesame3bt#0.31.0")
+    cg.add_library("libsesame3bt", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt")
+    cg.add_library("libsesame3bt-core", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt-core")
+    cg.add_library("libsesame3bt-server", None, "symlink://../../../../../../PlatformIO/Projects/libsesame3bt-server")
+    cg.add_platformio_option("lib_ldf_mode", "deep")
 
     if CORE.using_esp_idf:
         esp32.add_idf_component(name="h2zero/esp-nimble-cpp", ref="2.3.2")

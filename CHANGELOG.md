@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.26.0] 2026-01-XX
+- Add `history_scaled_voltage` and `history_battery_pct` to `lock:` object.
+
 ## [v0.25.1] 2025-12-13
 - Fix UUID history_tag not retrieved for operation by updated devices (Touch / Remote / Face).
 - Add `sesame_face_pro_ai`, `sesame_face_ai` symbols.

@@ -80,7 +80,7 @@ external_components:
   - source:
       type: git
       url: https://github.com/homy-newfs8/esphome-sesame3
-      ref: v0.25.0
+      ref: v0.26.0
     components: [ sesame, sesame_ble ]
 ```
 
@@ -171,6 +171,10 @@ In addition to base [Lock](https://esphome.io/components/lock/#base-lock-configu
 * **trigger_type** (*Optional*, Sensor): Deprecated. Use history_tag_type instead.
 * **history_tag_type** (*Optional*, [Sensor](https://esphome.io/components/sensor/#config-sensor)): See [below](#history-tag-uuid-and-history-tag-type)
   * **name** (**Required**, string): The name of the history type sensor.
+  * All other options from [sensor](https://esphome.io/components/sensor/#config-sensor)
+* **history_scaled_voltage** (*Optional*, [Sensor](https://esphome.io/components/sensor/#config-sensor)): The voltage reported by the device that performed the lock/unlock (SESAME Touch / Remote / OpenSensor / Face). The value is normalized to the equivalent for two batteries (full charge = 7.2V) regardless of model. Some models may only report voltage when locking.
+* **history_battery_pct** (*Optional*, [Sensor](https://esphome.io/components/sensor/#config-sensor)): Battery percentage (%) calculated from the voltage reported by the triggering device. The Android app applies a special conversion table only for the Open Sensor, but this component uses the same table for the Remote nano since it uses the same battery.
+  * **name** (**Required**, string): The name of the history battery percentage sensor.
   * All other options from [sensor](https://esphome.io/components/sensor/#config-sensor)
 * **fast_notify** (*Optional*, bool): Notify lock status immediately on detecting status changed. If false and `history_tag` or `history_type` defined, lock notification is postponed until history information has been received. Default is `false`.
 * **unknown_state_alternative** (**Deprecated**, *Optional*, lock_state): (As of Home Assistant 2025.10.0, `NONE` state is properly treated as `UNKNOWN`)\
@@ -395,12 +399,12 @@ graph LR
 lock[SESAME 5 / bot 2]
 
 t[Old triggers] -->|"lock command(TAG string)"| lock
-n[New triggers<br/>After May 2025] -->|"lock command(TAG UUID + trigger_type)"| lock
+n[New triggers<br/>After May 2025] -->|"lock command(TAG UUID + history_tag_type)"| lock
 r[esphome-sesame3] -->|"lock command(TAG string)"| lock
 
 esphome[esphome-sesame3]
 
-lock -->|TAG string or<br/>TAG UUID + trigger_type| esphome
+lock -->|TAG string or<br/>TAG UUID + history_tag_type| esphome
 ```
 
 On ESPHome, `history_tag_type` is represented with float value, and your can determine which history tag type is received by it's value.

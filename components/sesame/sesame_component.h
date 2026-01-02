@@ -5,7 +5,6 @@
 #include <esphome/components/sensor/sensor.h>
 #include <esphome/core/component.h>
 #include <mutex>
-#include <optional>
 #include <string_view>
 #include <vector>
 #include "feature.h"
@@ -19,6 +18,16 @@ class SesameServerComponent;
 }  // namespace sesame_server
 
 namespace sesame_lock {
+
+class BinarySensorWithInvalidate : public binary_sensor::BinarySensor {
+ public:
+	void set_state_internal(esphome::optional<bool> state) {
+		this->state_ = state;
+		if (state.has_value()) {
+			this->state = *state;
+		}
+	}
+};
 
 enum class state_t : int8_t {
 	not_connected,
@@ -48,7 +57,7 @@ class SesameComponent : public PollingComponent {
 	void set_battery_pct_sensor(sensor::Sensor* sensor) { pct_sensor = sensor; }
 	void set_battery_voltage_sensor(sensor::Sensor* sensor) { voltage_sensor = sensor; }
 	void set_connection_sensor(binary_sensor::BinarySensor* sensor) { connection_sensor = sensor; }
-	void set_battery_critical_sensor(binary_sensor::BinarySensor* sensor) { battery_critical_sensor = sensor; }
+	void set_battery_critical_sensor(BinarySensorWithInvalidate* sensor) { battery_critical_sensor = sensor; }
 	void set_connect_retry_limit(uint16_t retry_limit) { connect_limit = retry_limit; }
 	void set_connection_timeout(uint32_t timeout) { connection_timeout = timeout; }
 	void set_feature(Feature* feature) { this->feature = feature; }
@@ -60,7 +69,7 @@ class SesameComponent : public PollingComponent {
 
  private:
 	libsesame3bt::SesameClient sesame;
-	std::optional<libsesame3bt::SesameClient::Status> sesame_status;
+	esphome::optional<libsesame3bt::SesameClient::Status> sesame_status;
 	NimBLEAddress ble_address;
 	uint32_t last_connect_attempted = 0;
 	uint32_t state_started = 0;
@@ -68,7 +77,7 @@ class SesameComponent : public PollingComponent {
 	const char* TAG = "";
 	sensor::Sensor* pct_sensor = nullptr;
 	sensor::Sensor* voltage_sensor = nullptr;
-	binary_sensor::BinarySensor* battery_critical_sensor = nullptr;
+	BinarySensorWithInvalidate* battery_critical_sensor = nullptr;
 	Feature* feature = nullptr;
 	binary_sensor::BinarySensor* connection_sensor = nullptr;
 	sesame_server::SesameServerComponent* server = nullptr;

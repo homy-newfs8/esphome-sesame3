@@ -107,20 +107,36 @@ SesameComponent::setup() {
 void
 SesameComponent::reflect_sesame_status() {
 	if (pct_sensor) {
-		pct_sensor->publish_state(sesame_status ? sesame_status->battery_pct() : NAN);
+		pct_sensor->state = sesame_status ? sesame_status->battery_pct() : NAN;
 	}
 	if (voltage_sensor) {
-		voltage_sensor->publish_state(sesame_status ? sesame_status->voltage() : NAN);
+		voltage_sensor->state = sesame_status ? sesame_status->voltage() : NAN;
 	}
 	if (battery_critical_sensor) {
 		if (sesame_status) {
-			battery_critical_sensor->publish_state(sesame_status->battery_critical());
+			battery_critical_sensor->set_state_internal(sesame_status->battery_critical());
 		} else {
-			battery_critical_sensor->invalidate_state();
+			battery_critical_sensor->set_state_internal({});
 		}
 	}
+
 	if (feature) {
 		feature->reflect_status_changed();
+	}
+
+	if (pct_sensor) {
+		pct_sensor->publish_state(pct_sensor->state);
+	}
+	if (voltage_sensor) {
+		voltage_sensor->publish_state(voltage_sensor->state);
+	}
+	if (battery_critical_sensor) {
+		if (sesame_status) {
+			battery_critical_sensor->publish_state(battery_critical_sensor->state);
+		} else {
+			battery_critical_sensor->set_state_internal(false);  // force publish unknown
+			battery_critical_sensor->invalidate_state();
+		}
 	}
 }
 
