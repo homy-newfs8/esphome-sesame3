@@ -112,7 +112,9 @@ SesameComponent::reflect_sesame_status() {
 	if (voltage_sensor) {
 		voltage_sensor->state = sesame_status ? sesame_status->voltage() : NAN;
 	}
+	esphome::optional<bool> pre_crit{};
 	if (battery_critical_sensor) {
+		pre_crit = battery_critical_sensor->get_state_internal();
 		if (sesame_status) {
 			battery_critical_sensor->set_state_internal(sesame_status->battery_critical());
 		} else {
@@ -131,10 +133,10 @@ SesameComponent::reflect_sesame_status() {
 		voltage_sensor->publish_state(voltage_sensor->state);
 	}
 	if (battery_critical_sensor) {
+		battery_critical_sensor->set_state_internal(pre_crit);
 		if (sesame_status) {
-			battery_critical_sensor->publish_state(battery_critical_sensor->state);
+			battery_critical_sensor->publish_state(sesame_status->battery_critical());
 		} else {
-			battery_critical_sensor->set_state_internal(false);  // force publish unknown
 			battery_critical_sensor->invalidate_state();
 		}
 	}

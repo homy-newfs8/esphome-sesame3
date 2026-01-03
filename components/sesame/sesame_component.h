@@ -27,6 +27,7 @@ class BinarySensorWithInvalidate : public binary_sensor::BinarySensor {
 			this->state = *state;
 		}
 	}
+	esphome::optional<bool> get_state_internal() const { return this->state_; }
 };
 
 enum class state_t : int8_t {
