@@ -195,11 +195,11 @@ SesameComponent::loop() {
 			if (can_connect(this)) {
 				ESP_LOGD(TAG, "My turn to connect");
 				if (server && server->has_trigger(ble_address)) {
+					server->stop_advertising();
 					if (server->has_session(ble_address)) {
 						ESP_LOGD(TAG, "Disconnecting from server");
 						server->disconnect(ble_address);
 					}
-					server->stop_advertising();
 					set_state(state_t::wait_server_disconnect);
 				} else {
 					++connect_tried;
@@ -237,6 +237,13 @@ SesameComponent::loop() {
 				ESP_LOGE(TAG, "Connect timeout not occurred within expected time, reboot after %lu secs", REBOOT_DELAY_SEC);
 				connect_done(this);
 				set_state(state_t::wait_reboot);
+				break;
+			}
+			if (server && server->has_trigger(ble_address) && server->has_session(ble_address)) {
+				ESP_LOGD(TAG, "Connected to server during connecting, disconnect again");
+				server->stop_advertising();
+				server->disconnect(ble_address);
+				set_state(state_t::wait_server_disconnect);
 				break;
 			}
 			if (sesame.get_state() == SesameClient::state_t::connected) {

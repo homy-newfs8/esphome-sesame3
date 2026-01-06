@@ -23,5 +23,5 @@ async def to_code(config):
     cg.add_library("libsesame3bt", None, "https://github.com/homy-newfs8/libsesame3bt#0.31.0")
 
     if CORE.using_esp_idf:
-        esp32.add_idf_component(name="h2zero/esp-nimble-cpp", ref="2.3.2")
+        esp32.add_idf_component(name="h2zero/esp-nimble-cpp", ref="~2.3.4")
         CORE.add_platformio_option("lib_ignore", "NimBLE-Arduino")
