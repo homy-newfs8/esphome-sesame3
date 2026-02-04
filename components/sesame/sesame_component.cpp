@@ -207,6 +207,7 @@ SesameComponent::loop() {
 						set_state(state_t::connecting);
 					} else {
 						ESP_LOGW(TAG, "Failed to start connect rc=%d", get_last_error());
+						disconnect();
 						connect_done(this);
 						set_state(state_t::not_connected);
 					}
@@ -227,6 +228,7 @@ SesameComponent::loop() {
 					set_state(state_t::connecting);
 				} else {
 					ESP_LOGW(TAG, "Failed to start connect rc=%d", get_last_error());
+					disconnect();
 					connect_done(this);
 					set_state(state_t::not_connected);
 				}
@@ -241,6 +243,7 @@ SesameComponent::loop() {
 			}
 			if (server && server->has_trigger(ble_address) && server->has_session(ble_address)) {
 				ESP_LOGD(TAG, "Connected to server during connecting, disconnect again");
+				disconnect();
 				server->stop_advertising();
 				server->disconnect(ble_address);
 				set_state(state_t::wait_server_disconnect);
