@@ -22,6 +22,6 @@ async def to_code(config):
     await esp32_ble_tracker.register_ble_device(var, config)
     cg.add_library("libsesame3bt", None, "https://github.com/homy-newfs8/libsesame3bt#0.31.0")
 
-    if CORE.using_esp_idf:
+    if not CORE.using_arduino:
         esp32.add_idf_component(name="h2zero/esp-nimble-cpp", ref="~2.3.4")
         CORE.add_platformio_option("lib_ignore", "NimBLE-Arduino")
