@@ -1,7 +1,9 @@
 # Changelog
 
-## [v0.26.1] 2026-01-06
+## [v0.26.1] 2026-02-15
 - Improved connectivity when used with esphome-sesame_server
+- Do not use deprecated CORE.using_esp_idf
+- Set the state to disconnected if an asynchronous connection cannot be started.
 
 ## [v0.26.0] 2026-01-03
 - Add `history_scaled_voltage` and `history_battery_pct` to `lock:` object.
