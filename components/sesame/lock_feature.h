@@ -25,10 +25,15 @@ class SesameLock : public lock::Lock, public Feature {
 	using lock::Lock::open;
 	using lock::Lock::unlock;
 	void lock(std::string_view tag);
+	void lock(StringRef tag) { lock(std::string_view{tag.c_str(), tag.size()}); }
 	void unlock(std::string_view tag);
+	void unlock(StringRef tag) { unlock(std::string_view{tag.c_str(), tag.size()}); }
 	void lock(float history_tag_type, std::string_view tag);
+	void lock(float history_tag_type, StringRef tag) { lock(history_tag_type, std::string_view{tag.c_str(), tag.size()}); }
 	void unlock(float history_tag_type, std::string_view tag);
+	void unlock(float history_tag_type, StringRef tag) { unlock(history_tag_type, std::string_view{tag.c_str(), tag.size()}); }
 	void open(std::string_view tag);
+	void open(StringRef tag) { open(std::string_view{tag.c_str(), tag.size()}); }
 	void set_history_tag_sensor(text_sensor::TextSensor* sensor) { history_tag_sensor = sensor; }
 	void set_history_type_sensor(sensor::Sensor* sensor) { history_type_sensor = sensor; }
 	void set_history_tag_type_sensor(sensor::Sensor* sensor) { history_tag_type_sensor = sensor; }

@@ -18,7 +18,7 @@ external_components:
   - source:
       type: git
       url: https://github.com/homy-newfs8/esphome-sesame3
-      ref: v0.26.1
+      ref: v0.26.2
     components: [ sesame, sesame_ble ]
 ```
 

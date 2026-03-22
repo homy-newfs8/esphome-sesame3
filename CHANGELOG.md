@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.26.2] 2026-03-22
+- API added for compatibility with ESPHome 2026.3
+
 ## [v0.26.1] 2026-02-15
 - Improved connectivity when used with esphome-sesame_server
 - Do not use deprecated CORE.using_esp_idf
