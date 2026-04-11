@@ -24,7 +24,7 @@ BotFeature::reflect_status_changed() {
 }
 
 void
-BotFeature::run(std::optional<int> script_no) {
+BotFeature::run(std::optional<uint8_t> script_no) {
 	if (!parent_->sesame.click(script_no)) {
 		ESP_LOGW(TAG, "click() failed");
 	}

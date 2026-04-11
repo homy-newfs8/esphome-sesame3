@@ -15,7 +15,7 @@ class BotFeature : public Feature {
 	void loop() override {}
 	void reflect_status_changed() override;
 	void publish_initial_state() override {};
-	void run(std::optional<int> script_no = std::nullopt);
+	void run(std::optional<uint8_t> script_no = std::nullopt);
 	void set_running_sensor(binary_sensor::BinarySensor* sensor) { running_sensor = sensor; }
 
  private:
