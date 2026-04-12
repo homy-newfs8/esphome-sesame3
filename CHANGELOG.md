@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.27.1] 2026-04-12
+- More ESPHome 2026.4.0 compatibility
+
 ## [v0.27.0] 2026-04-11
 - Bump dependend libraries
 - Align bot run() parameter type to libsesame3bt

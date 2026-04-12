@@ -4,6 +4,7 @@
 #include <esphome/components/binary_sensor/binary_sensor.h>
 #include <esphome/components/sensor/sensor.h>
 #include <esphome/core/component.h>
+#include <esphome/core/version.h>
 #include <mutex>
 #include <string_view>
 #include <vector>
@@ -21,6 +22,19 @@ namespace sesame_lock {
 
 class BinarySensorWithInvalidate : public binary_sensor::BinarySensor {
  public:
+#if ESPHOME_VERSION_CODE >= VERSION_CODE(2026, 4, 0)
+	void set_state_internal(esphome::optional<bool> state) {
+		if (state.has_value()) {
+			this->flags_.has_state = true;
+			this->state = *state;
+		} else {
+			this->flags_.has_state = false;
+		}
+	}
+	esphome::optional<bool> get_state_internal() const {
+		return this->flags_.has_state ? esphome::optional<bool>(this->state) : esphome::nullopt;
+	}
+#else
 	void set_state_internal(esphome::optional<bool> state) {
 		this->state_ = state;
 		if (state.has_value()) {
@@ -28,6 +42,7 @@ class BinarySensorWithInvalidate : public binary_sensor::BinarySensor {
 		}
 	}
 	esphome::optional<bool> get_state_internal() const { return this->state_; }
+#endif
 };
 
 enum class state_t : int8_t {

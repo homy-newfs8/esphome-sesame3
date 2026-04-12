@@ -106,6 +106,7 @@ SesameComponent::setup() {
 
 void
 SesameComponent::reflect_sesame_status() {
+	// Update sensors without publishing state yet, so that callbacks can read the new values before they are published
 	if (pct_sensor) {
 		pct_sensor->state = sesame_status ? sesame_status->battery_pct() : NAN;
 	}
@@ -126,6 +127,7 @@ SesameComponent::reflect_sesame_status() {
 		feature->reflect_status_changed();
 	}
 
+	// Now publish sensor states after all updates are done, so that callbacks only see the new values
 	if (pct_sensor) {
 		pct_sensor->publish_state(pct_sensor->state);
 	}

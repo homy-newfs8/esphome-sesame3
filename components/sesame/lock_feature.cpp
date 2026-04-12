@@ -1,6 +1,7 @@
 #include "lock_feature.h"
 #include <esphome/core/hal.h>
 #include <esphome/core/log.h>
+#include <esphome/core/version.h>
 #include <cmath>
 #include "sesame_component.h"
 
@@ -146,7 +147,11 @@ SesameLock::publish_lock_state(bool force_publish) {
 	}
 	if (state == st && force_publish) {
 		ESP_LOGD(TAG, "'%s': (Force) Sending state %s", this->name_.c_str(), LOG_STR_ARG(lock_state_to_string(state)));
+#if ESPHOME_VERSION_CODE >= VERSION_CODE(2026, 4, 0)
+		state_callback_.call(state);
+#else
 		state_callback_.call();
+#endif
 	}
 	publish_state(st);
 	motor_moved = false;
