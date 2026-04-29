@@ -2,10 +2,10 @@
 
 [ESPHome](https://esphome.io/) Smart Lock component for CANDY HOUSE [SESAME 5](https://jp.candyhouse.co/products/sesame5) / [SESAME 5 PRO](https://jp.candyhouse.co/products/sesame5-pro) / [SESAME Bot 2](https://jp.candyhouse.co/products/sesamebot2) / SESAME bot / SESAME 3 / SESAME 4 / SESAME Bike, control via Bluetooth LE
 
-> [!WARNING]
+> [!NOTE]
 > I have observed that this component may become unstable when used on
-> ESP32-PICO-D4 with ESPHome version 2026.3.0 or later (e.g., M5Stack Atom Lite, M5Stick-C).\
-> If you experience instability, please try using an earlier version of ESPHome, such as 2026.2.x.
+> ESP32-PICO-D4 with ESPHome version 2026.3.x (e.g., M5Stack Atom Lite, M5Stick-C).\
+> If you experience instability, please try using an newer or earlier version of ESPHome, such as 2026.4.x.
 
 > [!NOTE]
 > This component does not use ESPHome's built-in `BTClient`
