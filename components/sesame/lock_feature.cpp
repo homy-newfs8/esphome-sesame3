@@ -162,7 +162,9 @@ SesameLock::lock(std::string_view tag) {
 	if (!operable_warn()) {
 		return;
 	}
-	parent_->sesame.lock(tag);
+	if (!parent_->sesame.lock(tag)) {
+		ESP_LOGW(TAG, "Failed to send lock command");
+	}
 }
 
 void
@@ -170,7 +172,9 @@ SesameLock::unlock(std::string_view tag) {
 	if (!operable_warn()) {
 		return;
 	}
-	parent_->sesame.unlock(tag);
+	if (!parent_->sesame.unlock(tag)) {
+		ESP_LOGW(TAG, "Failed to send unlock command");
+	}
 }
 
 void
@@ -178,7 +182,9 @@ SesameLock::open(std::string_view tag) {
 	if (!operable_warn()) {
 		return;
 	}
-	parent_->sesame.click(tag);
+	if (!parent_->sesame.click(tag)) {
+		ESP_LOGW(TAG, "Failed to send click command");
+	}
 }
 
 static int8_t

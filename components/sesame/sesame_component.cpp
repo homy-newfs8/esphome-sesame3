@@ -341,7 +341,9 @@ is_central_model(Sesame::model_t model) {
 void
 SesameComponent::update() {
 	if (my_state == state_t::running) {
-		sesame.request_status();
+		if (!sesame.request_status()) {
+			ESP_LOGW(TAG, "Failed to request status");
+		}
 	} else if (my_state == state_t::not_connected) {
 		if (is_central_model(sesame.get_model()) && server) {
 			if (server->has_session(ble_address)) {
