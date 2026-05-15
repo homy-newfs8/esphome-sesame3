@@ -91,12 +91,22 @@ SESAME_MODELS = {
     "open_sensor": SesameModel_t.open_sensor_1,
     "sesame_touch_pro": SesameModel_t.sesame_touch_pro,
     "sesame_touch": SesameModel_t.sesame_touch,
-    "sesame_bot_2": SesameModel_t.sesame_bot_2,
     "remote": SesameModel_t.remote,
+    "sesame_5_us": SesameModel_t.sesame_5_us,
+    "sesame_bot_2": SesameModel_t.sesame_bot_2,
     "sesame_face_pro": SesameModel_t.sesame_face_pro,
     "sesame_face": SesameModel_t.sesame_face,
+    "sesame_6": SesameModel_t.sesame_6,
+    "sesame_6_pro": SesameModel_t.sesame_6_pro,
     "sesame_face_pro_ai": SesameModel_t.sesame_face_pro_ai,
     "sesame_face_ai": SesameModel_t.sesame_face_ai,
+    "open_sensor_2": SesameModel_t.open_sensor_2,
+    "sesame_touch_2": SesameModel_t.sesame_touch_2,
+    "sesame_touch_2_pro": SesameModel_t.sesame_touch_2_pro,
+    "sesame_face_2": SesameModel_t.sesame_face_2,
+    "sesame_face_2_pro": SesameModel_t.sesame_face_2_pro,
+    "sesame_face_2_ai": SesameModel_t.sesame_face_2_ai,
+    "sesame_face_2_pro_ai": SesameModel_t.sesame_face_2_pro_ai,
 }
 
 
@@ -105,16 +115,43 @@ def is_os3_model(model):
 
 
 def is_lockable_model(model):
-    return model not in ("open_sensor", "sesame_touch_pro", "sesame_touch", "sesame_bot_2", "remote", "sesame_face_pro", "sesame_face")
+    return model in (
+        "sesame_3",
+        "sesame_bot",
+        "sesame_bike",
+        "sesame_cycle",
+        "sesame_4",
+        "sesame_5",
+        "sesame_bike_2",
+        "sesame_5_pro",
+        "sesame_5_us",
+        "sesame_6",
+        "sesame_6_pro",
+    )
 
 
-def is_connectable_trigger_mode(model):
-    return model in ("sesame_touch_pro", "sesame_touch", "remote", "sesame_face_pro", "sesame_face")
+def is_connectable_trigger_model(model):
+    return model in (
+        "sesame_touch_pro",
+        "sesame_touch",
+        "remote",
+        "sesame_face_pro",
+        "sesame_face",
+        "sesame_face_pro_ai",
+        "sesame_face_ai",
+        "open_sensor_2",
+        "sesame_touch_2",
+        "sesame_touch_2_pro",
+        "sesame_face_2",
+        "sesame_face_2_pro",
+        "sesame_face_2_ai",
+        "sesame_face_2_pro_ai",
+    )
 
 
 def add_sesame_server_references(config: esp_config.Config):
     """Add a reference to the Sesame server component if it exists in the config."""
-    if not is_connectable_trigger_mode(config[CONF_MODEL]):
+    if not is_connectable_trigger_model(config[CONF_MODEL]):
         return
     server_id = None
     for id, _ in esp_config.iter_ids(fv.full_config.get()):
