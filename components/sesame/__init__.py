@@ -88,7 +88,6 @@ SESAME_MODELS = {
     "sesame_5": SesameModel_t.sesame_5,
     "sesame_bike_2": SesameModel_t.sesame_bike_2,
     "sesame_5_pro": SesameModel_t.sesame_5_pro,
-    "open_sensor": SesameModel_t.open_sensor_1,
     "sesame_touch_pro": SesameModel_t.sesame_touch_pro,
     "sesame_touch": SesameModel_t.sesame_touch,
     "remote": SesameModel_t.remote,
