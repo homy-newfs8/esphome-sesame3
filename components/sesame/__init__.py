@@ -66,6 +66,9 @@ CONF_HISTORY_TYPE = "history_type"
 CONF_HISTORY_TAG_TYPE = "history_tag_type"
 CONF_HISTORY_SCALED_VOLTAGE = "history_scaled_voltage"
 CONF_HISTORY_BATTERY_PCT = "history_battery_pct"
+CONF_HISTORY_SCALED_VOLTAGE2 = "history_scaled_voltage2"
+CONF_HISTORY_BATTERY_PCT2 = "history_battery_pct2"
+CONF_HISTORY_EXTRA = "history_extra"
 CONF_TRIGGER_TYPE = "trigger_type"
 CONF_CONNECT_RETRY_LIMIT = "connect_retry_limit"
 CONF_UNKNOWN_STATE_ALTERNATIVE = "unknown_state_alternative"
@@ -288,6 +291,19 @@ CONFIG_SCHEMA = cv.All(
                             state_class=STATE_CLASS_MEASUREMENT,
                             accuracy_decimals=1,
                         ),
+                        cv.Optional(CONF_HISTORY_SCALED_VOLTAGE2): sensor.sensor_schema(
+                            unit_of_measurement=UNIT_VOLT,
+                            device_class=DEVICE_CLASS_VOLTAGE,
+                            state_class=STATE_CLASS_MEASUREMENT,
+                            accuracy_decimals=2,
+                        ),
+                        cv.Optional(CONF_HISTORY_BATTERY_PCT2): sensor.sensor_schema(
+                            unit_of_measurement=UNIT_PERCENT,
+                            device_class=DEVICE_CLASS_BATTERY,
+                            state_class=STATE_CLASS_MEASUREMENT,
+                            accuracy_decimals=1,
+                        ),
+                        cv.Optional(CONF_HISTORY_EXTRA): text_sensor.text_sensor_schema(),
                         cv.Optional(CONF_UNKNOWN_STATE_ALTERNATIVE): cv.enum(LOCK_STATES),
                         cv.Optional(CONF_UNKNOWN_STATE_TIMEOUT, default="20s"): cv.positive_time_period_milliseconds,
                         cv.Optional(CONF_FAST_NOTIFY, default=False): cv.boolean,
@@ -379,6 +395,15 @@ async def to_code(config):
         if CONF_HISTORY_BATTERY_PCT in lconfig:
             s = await sensor.new_sensor(lconfig[CONF_HISTORY_BATTERY_PCT])
             cg.add(lck.set_history_battery_pct_sensor(s))
+        if CONF_HISTORY_SCALED_VOLTAGE2 in lconfig:
+            s = await sensor.new_sensor(lconfig[CONF_HISTORY_SCALED_VOLTAGE2])
+            cg.add(lck.set_history_scaled_voltage2_sensor(s))
+        if CONF_HISTORY_BATTERY_PCT2 in lconfig:
+            s = await sensor.new_sensor(lconfig[CONF_HISTORY_BATTERY_PCT2])
+            cg.add(lck.set_history_battery_pct2_sensor(s))
+        if CONF_HISTORY_EXTRA in lconfig:
+            s = await text_sensor.new_text_sensor(lconfig[CONF_HISTORY_EXTRA])
+            cg.add(lck.set_history_extra_sensor(s))
         if CONF_UNKNOWN_STATE_ALTERNATIVE in lconfig:
             cg.add(lck.set_unknown_state_alternative(lconfig[CONF_UNKNOWN_STATE_ALTERNATIVE]))
         if CONF_UNKNOWN_STATE_TIMEOUT in lconfig:

@@ -2,6 +2,7 @@
 #include <esphome/core/hal.h>
 #include <esphome/core/log.h>
 #include <esphome/core/version.h>
+#include <libsesame3bt/util.h>
 #include <cmath>
 #include "sesame_component.h"
 
@@ -35,8 +36,14 @@ SesameLock::init() {
 	if (using_history()) {
 		recv_history_tag.reserve(SesameClient::MAX_CMD_TAG_SIZE + 1);
 		parent_->sesame.set_history_callback([this](auto& client, const auto& history) {
-			ESP_LOGD(TAG, "hist: r=%u,id=%ld,type=%u,str=(%u)%.*s,svol=%.2f", static_cast<uint8_t>(history.result), history.record_id,
-			         static_cast<uint8_t>(history.type), history.tag_len, history.tag_len, history.tag, history.scaled_voltage);
+			ESP_LOGD(TAG, "hist: r=%u,id=%ld,type=%u,str=(%u)%.*s,svol=%.2f,svol2=%.2f", static_cast<uint8_t>(history.result),
+			         history.record_id, static_cast<uint8_t>(history.type), history.tag_len, history.tag_len, history.tag,
+			         history.scaled_voltage, history.scaled_voltage2);
+			if (history.extra.size() > 0) {
+				ESP_LOGD(TAG, "hist extra: %s", libsesame3bt::core::util::bin2hex(history.extra.data(), history.extra.size()).c_str());
+			} else {
+				ESP_LOGD(TAG, "hist extra: (none)");
+			}
 			if (is_bot1()) {
 				handle_bot_history(history);
 				return;
@@ -48,6 +55,8 @@ SesameLock::init() {
 					recv_history_type = history.type;
 					recv_history_tag.assign(history.tag, history.tag_len);
 					recv_scaled_voltage = history.scaled_voltage;
+					recv_scaled_voltage2 = history.scaled_voltage2;
+					recv_extra = history.extra;
 				}
 				if (last_history_requested > 0 && history_type_matched(lock_state, recv_history_type)) {
 					last_history_requested = 0;
@@ -92,6 +101,8 @@ SesameLock::handle_bot_history(const SesameClient::History& history) {
 			recv_history_type = history.type;
 			recv_history_tag.assign(history.tag, history.tag_len);
 			recv_scaled_voltage = history.scaled_voltage;
+			recv_scaled_voltage2 = history.scaled_voltage2;
+			recv_extra = history.extra;
 		}
 		if (last_history_requested > 0) {
 			last_history_requested = 0;
@@ -319,6 +330,22 @@ SesameLock::update_lock_state(lock::LockState new_state) {
 }
 
 void
+SesameLock::set_battery_pct_sensor(sensor::Sensor* sensor, float scaled_voltage) {
+	if (!sensor) {
+		return;
+	}
+	if (std::isfinite(scaled_voltage) && recv_history_tag_type.has_value()) {
+		if (*recv_history_tag_type == history_tag_type_t::open_sensor || *recv_history_tag_type == history_tag_type_t::remote_nano) {
+			sensor->state = Status::scaled_voltage_to_pct(scaled_voltage, Sesame::model_t::open_sensor_1);
+		} else {
+			sensor->state = Status::scaled_voltage_to_pct(scaled_voltage, Sesame::model_t::sesame_5);
+		}
+	} else {
+		sensor->state = NAN;
+	}
+}
+
+void
 SesameLock::publish_lock_history_state() {
 	if (history_tag_sensor) {
 		history_tag_sensor->state = recv_history_tag;
@@ -332,16 +359,13 @@ SesameLock::publish_lock_history_state() {
 	if (history_scaled_voltage_sensor) {
 		history_scaled_voltage_sensor->state = recv_scaled_voltage;
 	}
-	if (history_battery_pct_sensor) {
-		if (std::isfinite(recv_scaled_voltage) && recv_history_tag_type.has_value()) {
-			if (*recv_history_tag_type == history_tag_type_t::open_sensor || *recv_history_tag_type == history_tag_type_t::remote_nano) {
-				history_battery_pct_sensor->state = Status::scaled_voltage_to_pct(recv_scaled_voltage, Sesame::model_t::open_sensor_1);
-			} else {
-				history_battery_pct_sensor->state = Status::scaled_voltage_to_pct(recv_scaled_voltage, Sesame::model_t::sesame_5);
-			}
-		} else {
-			history_battery_pct_sensor->state = NAN;
-		}
+	set_battery_pct_sensor(history_battery_pct_sensor, recv_scaled_voltage);
+	if (history_scaled_voltage2_sensor) {
+		history_scaled_voltage2_sensor->state = recv_scaled_voltage2;
+	}
+	set_battery_pct_sensor(history_battery_pct2_sensor, recv_scaled_voltage2);
+	if (history_extra_sensor) {
+		history_extra_sensor->state = recv_extra;
 	}
 	if (!fast_notify) {
 		publish_lock_state(is_bot1());
@@ -360,6 +384,15 @@ SesameLock::publish_lock_history_state() {
 	}
 	if (history_battery_pct_sensor) {
 		history_battery_pct_sensor->publish_state(history_battery_pct_sensor->state);
+	}
+	if (history_scaled_voltage2_sensor) {
+		history_scaled_voltage2_sensor->publish_state(history_scaled_voltage2_sensor->state);
+	}
+	if (history_battery_pct2_sensor) {
+		history_battery_pct2_sensor->publish_state(history_battery_pct2_sensor->state);
+	}
+	if (history_extra_sensor) {
+		history_extra_sensor->publish_state(history_extra_sensor->state);
 	}
 }
 
