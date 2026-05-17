@@ -79,7 +79,10 @@ class SesameLock : public lock::Lock, public Feature {
 	virtual void control(const lock::LockCall& call) override;
 	virtual void open_latch() override;
 	bool operable_warn() const;
-	bool using_history() const { return history_tag_sensor || history_type_sensor; }
+	bool using_history() const {
+		return history_tag_sensor || history_type_sensor || history_tag_type_sensor || history_scaled_voltage_sensor ||
+		       history_battery_pct_sensor || history_scaled_voltage2_sensor || history_battery_pct2_sensor || history_extra_sensor;
+	}
 	void test_timeout();
 	void test_unknown_state();
 	void publish_lock_state(bool force_publish = false);
