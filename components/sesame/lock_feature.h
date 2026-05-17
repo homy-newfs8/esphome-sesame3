@@ -42,6 +42,7 @@ class SesameLock : public lock::Lock, public Feature {
 	void set_history_scaled_voltage2_sensor(sensor::Sensor* sensor) { history_scaled_voltage2_sensor = sensor; }
 	void set_history_battery_pct2_sensor(sensor::Sensor* sensor) { history_battery_pct2_sensor = sensor; }
 	void set_history_extra_sensor(text_sensor::TextSensor* sensor) { history_extra_sensor = sensor; }
+	void set_history_passthrough(bool enable) { history_passthrough = enable; }
 	void set_unknown_state_alternative(lock::LockState alternative) { unknown_state_alternative = alternative; }
 	void set_unknown_state_timeout(uint32_t timeout) { unknown_state_timeout = timeout; }
 	void set_fast_notify(bool fast_notify) { this->fast_notify = fast_notify; }
@@ -75,6 +76,7 @@ class SesameLock : public lock::Lock, public Feature {
 	uint32_t unknown_state_timeout = 20'000;
 	bool motor_moved = false;
 	bool fast_notify = false;
+	bool history_passthrough = false;
 
 	virtual void control(const lock::LockCall& call) override;
 	virtual void open_latch() override;
@@ -93,6 +95,8 @@ class SesameLock : public lock::Lock, public Feature {
 	void handle_bot_history(const libsesame3bt::SesameClient::History& history);
 	bool is_bot1() const;
 	void set_battery_pct_sensor(sensor::Sensor* sensor, float scaled_voltage);
+	void set_history_sensors();
+	void publish_history_sensors();
 };
 
 }  // namespace sesame_lock

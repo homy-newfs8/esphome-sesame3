@@ -62,6 +62,11 @@ SesameLock::init() {
 					last_history_requested = 0;
 					parent_->defer([this]() { publish_lock_history_state(); });
 					return;
+				} else if (history_passthrough) {
+					parent_->defer([this]() {
+						set_history_sensors();
+						publish_history_sensors();
+					});
 				}
 			}
 		});
@@ -346,7 +351,7 @@ SesameLock::set_battery_pct_sensor(sensor::Sensor* sensor, float scaled_voltage)
 }
 
 void
-SesameLock::publish_lock_history_state() {
+SesameLock::set_history_sensors() {
 	if (history_tag_sensor) {
 		history_tag_sensor->state = recv_history_tag;
 	}
@@ -367,9 +372,10 @@ SesameLock::publish_lock_history_state() {
 	if (history_extra_sensor) {
 		history_extra_sensor->state = recv_extra;
 	}
-	if (!fast_notify) {
-		publish_lock_state(is_bot1());
-	}
+}
+
+void
+SesameLock::publish_history_sensors() {
 	if (history_tag_sensor) {
 		history_tag_sensor->publish_state(history_tag_sensor->state);
 	}
@@ -394,6 +400,15 @@ SesameLock::publish_lock_history_state() {
 	if (history_extra_sensor) {
 		history_extra_sensor->publish_state(history_extra_sensor->state);
 	}
+}
+
+void
+SesameLock::publish_lock_history_state() {
+	set_history_sensors();
+	if (!fast_notify) {
+		publish_lock_state(is_bot1());
+	}
+	publish_history_sensors();
 }
 
 static bool
