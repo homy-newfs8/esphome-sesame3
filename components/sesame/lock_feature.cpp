@@ -62,11 +62,6 @@ SesameLock::init() {
 					last_history_requested = 0;
 					parent_->defer([this]() { publish_lock_history_state(); });
 					return;
-				} else if (history_passthrough) {
-					parent_->defer([this]() {
-						set_history_sensors();
-						publish_history_sensors();
-					});
 				}
 			}
 		});

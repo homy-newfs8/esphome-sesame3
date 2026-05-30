@@ -69,7 +69,6 @@ CONF_HISTORY_BATTERY_PCT = "history_battery_pct"
 CONF_HISTORY_SCALED_VOLTAGE2 = "history_scaled_voltage2"
 CONF_HISTORY_BATTERY_PCT2 = "history_battery_pct2"
 CONF_HISTORY_EXTRA = "history_extra"
-CONF_HISTORY_PASSTHROUGH = "history_passthrough"
 CONF_TRIGGER_TYPE = "trigger_type"
 CONF_CONNECT_RETRY_LIMIT = "connect_retry_limit"
 CONF_UNKNOWN_STATE_ALTERNATIVE = "unknown_state_alternative"
@@ -306,7 +305,6 @@ CONFIG_SCHEMA = cv.All(
                             accuracy_decimals=1,
                         ),
                         cv.Optional(CONF_HISTORY_EXTRA): text_sensor.text_sensor_schema(),
-                        cv.Optional(CONF_HISTORY_PASSTHROUGH, default=False): cv.boolean,
                         cv.Optional(CONF_UNKNOWN_STATE_ALTERNATIVE): cv.enum(LOCK_STATES),
                         cv.Optional(CONF_UNKNOWN_STATE_TIMEOUT, default="20s"): cv.positive_time_period_milliseconds,
                         cv.Optional(CONF_FAST_NOTIFY, default=False): cv.boolean,
@@ -407,8 +405,6 @@ async def to_code(config):
         if CONF_HISTORY_EXTRA in lconfig:
             s = await text_sensor.new_text_sensor(lconfig[CONF_HISTORY_EXTRA])
             cg.add(lck.set_history_extra_sensor(s))
-        if CONF_HISTORY_PASSTHROUGH in lconfig:
-            cg.add(lck.set_history_passthrough(lconfig[CONF_HISTORY_PASSTHROUGH]))
         if CONF_UNKNOWN_STATE_ALTERNATIVE in lconfig:
             cg.add(lck.set_unknown_state_alternative(lconfig[CONF_UNKNOWN_STATE_ALTERNATIVE]))
         if CONF_UNKNOWN_STATE_TIMEOUT in lconfig:
