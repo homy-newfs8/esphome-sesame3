@@ -110,6 +110,7 @@ SESAME_MODELS = {
     "sesame_face_2_pro": SesameModel_t.sesame_face_2_pro,
     "sesame_face_2_ai": SesameModel_t.sesame_face_2_ai,
     "sesame_face_2_pro_ai": SesameModel_t.sesame_face_2_pro_ai,
+    "sesame_bot_3": SesameModel_t.sesame_bot_3,
 }
 
 
@@ -213,7 +214,7 @@ def validate_always_connect(config: ConfigType) -> ConfigType:
 def validate_bot_features(config: ConfigType) -> ConfigType:
     if CONF_LOCK in config and CONF_BOT in config:
         raise cv.Invalid("Cannot define both `lock` and `bot` on one Bot device")
-    if CONF_BOT in config and config[CONF_MODEL] not in ("sesame_bot", "sesame_bot_2"):
+    if CONF_BOT in config and config[CONF_MODEL] not in ("sesame_bot", "sesame_bot_2", "sesame_bot_3"):
         raise cv.Invalid("`bot` can be defined in Bot device")
     return config
 
