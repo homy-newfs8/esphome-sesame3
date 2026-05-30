@@ -34,7 +34,8 @@ void
 SesameLock::init() {
 	ESP_LOGD(TAG, "lock init");
 	if (using_history()) {
-		recv_history_tag.reserve(SesameClient::MAX_CMD_TAG_SIZE + 1);
+		get_history_set().reserve_tag_buffer();
+		get_all_history_set().reserve_tag_buffer();
 		parent_->sesame.set_history_callback([this](auto& client, const auto& history) {
 			ESP_LOGD(TAG, "hist: r=%u,id=%ld,type=%u,str=(%u)%.*s,svol=%.2f,svol2=%.2f", static_cast<uint8_t>(history.result),
 			         history.record_id, static_cast<uint8_t>(history.type), history.tag_len, history.tag_len, history.tag,
@@ -49,19 +50,23 @@ SesameLock::init() {
 				return;
 			}
 			if (history.result == Sesame::result_code_t::success) {
-				if (history.type != Sesame::history_type_t::drive_locked && history.type != Sesame::history_type_t::drive_unlocked &&
-				    history.type != Sesame::history_type_t::drive_clicked) {
-					recv_history_tag_type = history.history_tag_type;
-					recv_history_type = history.type;
-					recv_history_tag.assign(history.tag, history.tag_len);
-					recv_scaled_voltage = history.scaled_voltage;
-					recv_scaled_voltage2 = history.scaled_voltage2;
-					recv_extra = history.extra;
+				if (auto& hset = get_history_set(); hset.using_history() && history.type != Sesame::history_type_t::drive_locked &&
+				                                    history.type != Sesame::history_type_t::drive_unlocked &&
+				                                    history.type != Sesame::history_type_t::drive_clicked) {
+					hset.save_received_values(history.type, history.history_tag_type, std::string_view{history.tag, history.tag_len},
+					                          history.scaled_voltage, history.scaled_voltage2, history.extra);
 				}
-				if (last_history_requested > 0 && history_type_matched(lock_state, recv_history_type)) {
+				if (auto& hset = get_all_history_set(); hset.using_history()) {
+					hset.save_received_values(history.type, history.history_tag_type, std::string_view{history.tag, history.tag_len},
+					                          history.scaled_voltage, history.scaled_voltage2, history.extra);
+				}
+				if (last_history_requested > 0 && history_type_matched(lock_state, history.type)) {
 					last_history_requested = 0;
 					parent_->defer([this]() { publish_lock_history_state(); });
 					return;
+				}
+				if (get_all_history_set().using_history()) {
+					parent_->defer([this]() { publish_all_history_state(); });
 				}
 			}
 		});
@@ -79,11 +84,15 @@ SesameLock::test_unknown_state() {
 				unknown_state_started = now;
 			} else if (unknown_state_timeout && now - unknown_state_started > unknown_state_timeout) {
 				update_lock_state(lock::LOCK_STATE_NONE);
-				if (history_tag_sensor) {
-					history_tag_sensor->publish_state("");
+				if (auto& hset = get_history_set(); hset.using_history()) {
+					hset.clear_received_values();
+					hset.set_history_sensors();
+					hset.publish_history_sensors();
 				}
-				if (history_type_sensor) {
-					history_type_sensor->publish_state(NAN);
+				if (auto& hset = get_all_history_set(); hset.using_history()) {
+					hset.clear_received_values();
+					hset.set_history_sensors();
+					hset.publish_history_sensors();
 				}
 				unknown_state_started = 0;
 			}
@@ -97,12 +106,12 @@ SesameLock::handle_bot_history(const SesameClient::History& history) {
 		if (history.type == Sesame::history_type_t::drive_locked || history.type == Sesame::history_type_t::drive_unlocked ||
 		    history.type == Sesame::history_type_t::drive_clicked) {
 		} else {
-			recv_history_tag_type = history.history_tag_type;
-			recv_history_type = history.type;
-			recv_history_tag.assign(history.tag, history.tag_len);
-			recv_scaled_voltage = history.scaled_voltage;
-			recv_scaled_voltage2 = history.scaled_voltage2;
-			recv_extra = history.extra;
+			if (auto& hset = get_history_set(); hset.using_history()) {
+				hset.save_received_values(history.type, history.history_tag_type, std::string_view{history.tag, history.tag_len},
+				                          history.scaled_voltage, history.scaled_voltage2, history.extra);
+				hset.set_history_sensors();
+				hset.publish_history_sensors();
+			}
 		}
 		if (last_history_requested > 0) {
 			last_history_requested = 0;
@@ -137,7 +146,7 @@ SesameLock::test_timeout() {
 		if (last_history_requested && now - last_history_requested > HISTORY_TIMEOUT) {
 			ESP_LOGW(TAG, "History receive timeout");
 			last_history_requested = 0;
-			clear_history();
+			get_history_set().clear_received_values();
 			publish_lock_history_state();
 		}
 	}
@@ -322,7 +331,7 @@ SesameLock::update_lock_state(lock::LockState new_state) {
 				last_history_requested = millis();
 			} else {
 				ESP_LOGW(TAG, "Failed to request history");
-				clear_history();
+				get_history_set().clear_received_values();
 				publish_lock_history_state();
 			}
 		}
@@ -330,7 +339,7 @@ SesameLock::update_lock_state(lock::LockState new_state) {
 }
 
 void
-SesameLock::set_battery_pct_sensor(sensor::Sensor* sensor, float scaled_voltage) {
+history_set::set_battery_pct_sensor(sensor::Sensor* sensor, float scaled_voltage) {
 	if (!sensor) {
 		return;
 	}
@@ -346,7 +355,7 @@ SesameLock::set_battery_pct_sensor(sensor::Sensor* sensor, float scaled_voltage)
 }
 
 void
-SesameLock::set_history_sensors() {
+history_set::set_history_sensors() {
 	if (history_tag_sensor) {
 		history_tag_sensor->state = recv_history_tag;
 	}
@@ -370,7 +379,7 @@ SesameLock::set_history_sensors() {
 }
 
 void
-SesameLock::publish_history_sensors() {
+history_set::publish_history_sensors() {
 	if (history_tag_sensor) {
 		history_tag_sensor->publish_state(history_tag_sensor->state);
 	}
@@ -399,11 +408,19 @@ SesameLock::publish_history_sensors() {
 
 void
 SesameLock::publish_lock_history_state() {
-	set_history_sensors();
+	auto& hset = get_history_set();
+	hset.set_history_sensors();
 	if (!fast_notify) {
 		publish_lock_state(is_bot1());
 	}
-	publish_history_sensors();
+	hset.publish_history_sensors();
+}
+
+void
+SesameLock::publish_all_history_state() {
+	auto& hset = get_all_history_set();
+	hset.set_history_sensors();
+	hset.publish_history_sensors();
 }
 
 static bool
@@ -431,11 +448,13 @@ SesameLock::history_type_matched(lock::LockState state, Sesame::history_type_t t
 }
 
 void
-SesameLock::clear_history() {
-	recv_history_tag_type = std::nullopt;
+history_set::clear_received_values() {
 	recv_history_type = Sesame::history_type_t::none;
+	recv_history_tag_type = std::nullopt;
 	recv_history_tag.clear();
 	recv_scaled_voltage = NAN;
+	recv_scaled_voltage2 = NAN;
+	recv_extra.clear();
 }
 
 void

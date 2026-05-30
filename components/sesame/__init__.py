@@ -61,15 +61,15 @@ CONF_SECRET = "secret"
 CONF_BATTERY_PCT = "battery_pct"
 CONF_BATTERY_VOLTAGE = "battery_voltage"
 CONF_BATTERY_CRITICAL = "battery_critical"
-CONF_HISTORY_TAG = "history_tag"
-CONF_HISTORY_TYPE = "history_type"
-CONF_HISTORY_TAG_TYPE = "history_tag_type"
-CONF_HISTORY_SCALED_VOLTAGE = "history_scaled_voltage"
-CONF_HISTORY_BATTERY_PCT = "history_battery_pct"
-CONF_HISTORY_SCALED_VOLTAGE2 = "history_scaled_voltage2"
-CONF_HISTORY_BATTERY_PCT2 = "history_battery_pct2"
-CONF_HISTORY_EXTRA = "history_extra"
-CONF_TRIGGER_TYPE = "trigger_type"
+CONF_HISTORY_TAG_S = "tag"
+CONF_HISTORY_TYPE_S = "type"
+CONF_HISTORY_TAG_TYPE_S = "tag_type"
+CONF_HISTORY_SCALED_VOLTAGE_S = "scaled_voltage"
+CONF_HISTORY_BATTERY_PCT_S = "battery_pct"
+CONF_HISTORY_SCALED_VOLTAGE2_S = "scaled_voltage2"
+CONF_HISTORY_BATTERY_PCT2_S = "battery_pct2"
+CONF_HISTORY_EXTRA_S = "extra"
+CONF_TRIGGER_TYPE_S = "trigger_type"
 CONF_CONNECT_RETRY_LIMIT = "connect_retry_limit"
 CONF_UNKNOWN_STATE_ALTERNATIVE = "unknown_state_alternative"
 CONF_CONNECTION_SENSOR = "connection_sensor"
@@ -229,23 +229,91 @@ def validate_address(config: ConfigType) -> ConfigType:
     return config
 
 
+CONF_HISTORY_PREFIXES = [
+    "history_",
+    "all_history_",
+]
+
+
 def validate_deprecation(config: ConfigType) -> ConfigType:
     if CONF_UNKNOWN_STATE_ALTERNATIVE in config:
         _LOGGER.warning(
             f"The option '{CONF_UNKNOWN_STATE_ALTERNATIVE}' is deprecated."
             " As of Home Assistant 2025.10.0, The `unknown` state is properly treated as `unknown`."
         )
-    if CONF_TRIGGER_TYPE in config:
-        if CONF_HISTORY_TAG_TYPE in config:
-            raise cv.Invalid(f"Cannot define both '{CONF_TRIGGER_TYPE}' and '{CONF_HISTORY_TAG_TYPE}'. Please use only '{CONF_HISTORY_TAG_TYPE}'.")
-        config[CONF_HISTORY_TAG_TYPE] = config.pop(CONF_TRIGGER_TYPE)
-        _LOGGER.warning(
-            f"The option '{CONF_TRIGGER_TYPE}' is deprecated. Please use '{CONF_HISTORY_TAG_TYPE}' instead. `{CONF_TRIGGER_TYPE}` will be removed in future releases."
-        )
+    for prefix in CONF_HISTORY_PREFIXES:
+        if prefix + CONF_TRIGGER_TYPE_S in config:
+            if prefix + CONF_HISTORY_TAG_TYPE_S in config:
+                raise cv.Invalid(
+                    f"Cannot define both '{prefix + CONF_TRIGGER_TYPE_S}' and '{prefix + CONF_HISTORY_TAG_TYPE_S}'. Please use only '{prefix + CONF_HISTORY_TAG_TYPE_S}'."
+                )
+            config[prefix + CONF_HISTORY_TAG_TYPE_S] = config.pop(prefix + CONF_TRIGGER_TYPE_S)
+            _LOGGER.warning(
+                f"The option '{prefix + CONF_TRIGGER_TYPE_S}' is deprecated. Please use '{prefix + CONF_HISTORY_TAG_TYPE_S}' instead. `{prefix + CONF_TRIGGER_TYPE_S}` will be removed in future releases."
+            )
     return config
 
 
 cv.All(cv.version_number, cv.validate_esphome_version)("2025.5.0")
+
+
+def lock_history_schema(prefix) -> dict:
+    return {
+        cv.Optional(prefix + CONF_HISTORY_TAG_S): text_sensor.text_sensor_schema(),
+        cv.Optional(prefix + CONF_HISTORY_TYPE_S): sensor.sensor_schema(
+            unit_of_measurement=UNIT_EMPTY,
+            device_class=DEVICE_CLASS_EMPTY,
+            state_class=STATE_CLASS_NONE,
+            accuracy_decimals=0,
+        ),
+        cv.Optional(prefix + CONF_TRIGGER_TYPE_S): sensor.sensor_schema(
+            unit_of_measurement=UNIT_EMPTY,
+            device_class=DEVICE_CLASS_EMPTY,
+            state_class=STATE_CLASS_NONE,
+            accuracy_decimals=0,
+        ),
+        cv.Optional(prefix + CONF_HISTORY_TAG_TYPE_S): sensor.sensor_schema(
+            unit_of_measurement=UNIT_EMPTY,
+            device_class=DEVICE_CLASS_EMPTY,
+            state_class=STATE_CLASS_NONE,
+            accuracy_decimals=0,
+        ),
+        cv.Optional(prefix + CONF_HISTORY_SCALED_VOLTAGE_S): sensor.sensor_schema(
+            unit_of_measurement=UNIT_VOLT,
+            device_class=DEVICE_CLASS_VOLTAGE,
+            state_class=STATE_CLASS_MEASUREMENT,
+            accuracy_decimals=2,
+        ),
+        cv.Optional(prefix + CONF_HISTORY_BATTERY_PCT_S): sensor.sensor_schema(
+            unit_of_measurement=UNIT_PERCENT,
+            device_class=DEVICE_CLASS_BATTERY,
+            state_class=STATE_CLASS_MEASUREMENT,
+            accuracy_decimals=1,
+        ),
+        cv.Optional(prefix + CONF_HISTORY_SCALED_VOLTAGE2_S): sensor.sensor_schema(
+            unit_of_measurement=UNIT_VOLT,
+            device_class=DEVICE_CLASS_VOLTAGE,
+            state_class=STATE_CLASS_MEASUREMENT,
+            accuracy_decimals=2,
+        ),
+        cv.Optional(prefix + CONF_HISTORY_BATTERY_PCT2_S): sensor.sensor_schema(
+            unit_of_measurement=UNIT_PERCENT,
+            device_class=DEVICE_CLASS_BATTERY,
+            state_class=STATE_CLASS_MEASUREMENT,
+            accuracy_decimals=1,
+        ),
+        cv.Optional(prefix + CONF_HISTORY_EXTRA_S): text_sensor.text_sensor_schema(),
+    }
+
+
+lock_schema = {
+    cv.GenerateID(): cv.declare_id(SesameLock),
+    cv.Optional(CONF_TAG, default="ESPHome"): cv.string,
+    cv.Optional(CONF_UNKNOWN_STATE_ALTERNATIVE): cv.enum(LOCK_STATES),
+    cv.Optional(CONF_UNKNOWN_STATE_TIMEOUT, default="20s"): cv.positive_time_period_milliseconds,
+    cv.Optional(CONF_FAST_NOTIFY, default=False): cv.boolean,
+}
+
 
 CONFIG_SCHEMA = cv.All(
     cv.Schema(
@@ -257,59 +325,7 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(CONF_ADDRESS): cv.mac_address,
             cv.Optional(CONF_UUID): cv.uuid,
             cv.Optional(CONF_LOCK): cv.All(
-                lock.lock_schema().extend(
-                    {
-                        cv.GenerateID(): cv.declare_id(SesameLock),
-                        cv.Optional(CONF_TAG, default="ESPHome"): cv.string,
-                        cv.Optional(CONF_HISTORY_TAG): text_sensor.text_sensor_schema(),
-                        cv.Optional(CONF_HISTORY_TYPE): sensor.sensor_schema(
-                            unit_of_measurement=UNIT_EMPTY,
-                            device_class=DEVICE_CLASS_EMPTY,
-                            state_class=STATE_CLASS_NONE,
-                            accuracy_decimals=0,
-                        ),
-                        cv.Optional(CONF_TRIGGER_TYPE): sensor.sensor_schema(
-                            unit_of_measurement=UNIT_EMPTY,
-                            device_class=DEVICE_CLASS_EMPTY,
-                            state_class=STATE_CLASS_NONE,
-                            accuracy_decimals=0,
-                        ),
-                        cv.Optional(CONF_HISTORY_TAG_TYPE): sensor.sensor_schema(
-                            unit_of_measurement=UNIT_EMPTY,
-                            device_class=DEVICE_CLASS_EMPTY,
-                            state_class=STATE_CLASS_NONE,
-                            accuracy_decimals=0,
-                        ),
-                        cv.Optional(CONF_HISTORY_SCALED_VOLTAGE): sensor.sensor_schema(
-                            unit_of_measurement=UNIT_VOLT,
-                            device_class=DEVICE_CLASS_VOLTAGE,
-                            state_class=STATE_CLASS_MEASUREMENT,
-                            accuracy_decimals=2,
-                        ),
-                        cv.Optional(CONF_HISTORY_BATTERY_PCT): sensor.sensor_schema(
-                            unit_of_measurement=UNIT_PERCENT,
-                            device_class=DEVICE_CLASS_BATTERY,
-                            state_class=STATE_CLASS_MEASUREMENT,
-                            accuracy_decimals=1,
-                        ),
-                        cv.Optional(CONF_HISTORY_SCALED_VOLTAGE2): sensor.sensor_schema(
-                            unit_of_measurement=UNIT_VOLT,
-                            device_class=DEVICE_CLASS_VOLTAGE,
-                            state_class=STATE_CLASS_MEASUREMENT,
-                            accuracy_decimals=2,
-                        ),
-                        cv.Optional(CONF_HISTORY_BATTERY_PCT2): sensor.sensor_schema(
-                            unit_of_measurement=UNIT_PERCENT,
-                            device_class=DEVICE_CLASS_BATTERY,
-                            state_class=STATE_CLASS_MEASUREMENT,
-                            accuracy_decimals=1,
-                        ),
-                        cv.Optional(CONF_HISTORY_EXTRA): text_sensor.text_sensor_schema(),
-                        cv.Optional(CONF_UNKNOWN_STATE_ALTERNATIVE): cv.enum(LOCK_STATES),
-                        cv.Optional(CONF_UNKNOWN_STATE_TIMEOUT, default="20s"): cv.positive_time_period_milliseconds,
-                        cv.Optional(CONF_FAST_NOTIFY, default=False): cv.boolean,
-                    }
-                ),
+                lock.lock_schema().extend(lock_schema | lock_history_schema("history_") | lock_history_schema("all_history_")),
                 validate_deprecation,
             ),
             cv.Optional(CONF_BOT): cv.Schema(
@@ -352,6 +368,33 @@ CONFIG_SCHEMA = cv.All(
 )
 
 
+async def add_history_codes(lock_obj, config, prefix):
+    if prefix + CONF_HISTORY_TAG_S in config:
+        s = await text_sensor.new_text_sensor(config[prefix + CONF_HISTORY_TAG_S])
+        cg.add(getattr(lock_obj, "set_" + prefix + CONF_HISTORY_TAG_S + "_sensor")(s))
+    if prefix + CONF_HISTORY_TYPE_S in config:
+        s = await sensor.new_sensor(config[prefix + CONF_HISTORY_TYPE_S])
+        cg.add(getattr(lock_obj, "set_" + prefix + CONF_HISTORY_TYPE_S + "_sensor")(s))
+    if prefix + CONF_HISTORY_TAG_TYPE_S in config:
+        s = await sensor.new_sensor(config[prefix + CONF_HISTORY_TAG_TYPE_S])
+        cg.add(getattr(lock_obj, "set_" + prefix + CONF_HISTORY_TAG_TYPE_S + "_sensor")(s))
+    if prefix + CONF_HISTORY_SCALED_VOLTAGE_S in config:
+        s = await sensor.new_sensor(config[prefix + CONF_HISTORY_SCALED_VOLTAGE_S])
+        cg.add(getattr(lock_obj, "set_" + prefix + CONF_HISTORY_SCALED_VOLTAGE_S + "_sensor")(s))
+    if prefix + CONF_HISTORY_BATTERY_PCT_S in config:
+        s = await sensor.new_sensor(config[prefix + CONF_HISTORY_BATTERY_PCT_S])
+        cg.add(getattr(lock_obj, "set_" + prefix + CONF_HISTORY_BATTERY_PCT_S + "_sensor")(s))
+    if prefix + CONF_HISTORY_SCALED_VOLTAGE2_S in config:
+        s = await sensor.new_sensor(config[prefix + CONF_HISTORY_SCALED_VOLTAGE2_S])
+        cg.add(getattr(lock_obj, "set_" + prefix + CONF_HISTORY_SCALED_VOLTAGE2_S + "_sensor")(s))
+    if prefix + CONF_HISTORY_BATTERY_PCT2_S in config:
+        s = await sensor.new_sensor(config[prefix + CONF_HISTORY_BATTERY_PCT2_S])
+        cg.add(getattr(lock_obj, "set_" + prefix + CONF_HISTORY_BATTERY_PCT2_S + "_sensor")(s))
+    if prefix + CONF_HISTORY_EXTRA_S in config:
+        s = await text_sensor.new_text_sensor(config[prefix + CONF_HISTORY_EXTRA_S])
+        cg.add(getattr(lock_obj, "set_" + prefix + CONF_HISTORY_EXTRA_S + "_sensor")(s))
+
+
 async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID], str(config[CONF_ID]))
     await cg.register_component(var, config)
@@ -381,30 +424,8 @@ async def to_code(config):
         lconfig = config[CONF_LOCK]
         lck = cg.new_Pvariable(lconfig[CONF_ID], var, config[CONF_MODEL], lconfig[CONF_TAG])
         await lock.register_lock(lck, config[CONF_LOCK])
-        if CONF_HISTORY_TAG in lconfig:
-            s = await text_sensor.new_text_sensor(lconfig[CONF_HISTORY_TAG])
-            cg.add(lck.set_history_tag_sensor(s))
-        if CONF_HISTORY_TYPE in lconfig:
-            s = await sensor.new_sensor(lconfig[CONF_HISTORY_TYPE])
-            cg.add(lck.set_history_type_sensor(s))
-        if CONF_HISTORY_TAG_TYPE in lconfig:
-            s = await sensor.new_sensor(lconfig[CONF_HISTORY_TAG_TYPE])
-            cg.add(lck.set_history_tag_type_sensor(s))
-        if CONF_HISTORY_SCALED_VOLTAGE in lconfig:
-            s = await sensor.new_sensor(lconfig[CONF_HISTORY_SCALED_VOLTAGE])
-            cg.add(lck.set_history_scaled_voltage_sensor(s))
-        if CONF_HISTORY_BATTERY_PCT in lconfig:
-            s = await sensor.new_sensor(lconfig[CONF_HISTORY_BATTERY_PCT])
-            cg.add(lck.set_history_battery_pct_sensor(s))
-        if CONF_HISTORY_SCALED_VOLTAGE2 in lconfig:
-            s = await sensor.new_sensor(lconfig[CONF_HISTORY_SCALED_VOLTAGE2])
-            cg.add(lck.set_history_scaled_voltage2_sensor(s))
-        if CONF_HISTORY_BATTERY_PCT2 in lconfig:
-            s = await sensor.new_sensor(lconfig[CONF_HISTORY_BATTERY_PCT2])
-            cg.add(lck.set_history_battery_pct2_sensor(s))
-        if CONF_HISTORY_EXTRA in lconfig:
-            s = await text_sensor.new_text_sensor(lconfig[CONF_HISTORY_EXTRA])
-            cg.add(lck.set_history_extra_sensor(s))
+        for prefix in CONF_HISTORY_PREFIXES:
+            await add_history_codes(lck, lconfig, prefix)
         if CONF_UNKNOWN_STATE_ALTERNATIVE in lconfig:
             cg.add(lck.set_unknown_state_alternative(lconfig[CONF_UNKNOWN_STATE_ALTERNATIVE]))
         if CONF_UNKNOWN_STATE_TIMEOUT in lconfig:
