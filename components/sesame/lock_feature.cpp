@@ -61,8 +61,8 @@ SesameLock::init() {
 					hset.save_received_values(history.type, history.history_tag_type, std::string_view{history.tag, history.tag_len},
 					                          history.scaled_voltage, history.scaled_voltage2, history.extra);
 				}
-				if (last_history_requested > 0 && history_type_matched(lock_state, history.type)) {
-					last_history_requested = 0;
+				if (history_timeout_started > 0 && history_type_matched(lock_state, history.type)) {
+					history_timeout_started = 0;
 					parent_->defer([this]() { publish_lock_history_state(); });
 				}
 				if (get_all_history_set().using_history()) {
@@ -113,19 +113,19 @@ SesameLock::handle_bot_history(const SesameClient::History& history) {
 				hset.publish_history_sensors();
 			}
 		}
-		if (last_history_requested > 0) {
-			last_history_requested = 0;
+		if (history_timeout_started > 0) {
+			history_timeout_started = 0;
 			parent_->defer([this]() { publish_lock_history_state(); });
 			return;
 		}
 	} else if (history.result == Sesame::result_code_t::not_found) {
-		if (last_history_requested > 0) {
-			last_history_requested = 0;
+		if (history_timeout_started > 0) {
+			history_timeout_started = 0;
 			parent_->defer([this]() { publish_lock_history_state(); });
 			return;
 		}
 	} else {
-		if (last_history_requested > 0) {
+		if (history_timeout_started > 0) {
 			parent_->set_timeout(300, [this]() {
 				parent_->sesame.request_history();
 				ESP_LOGD(TAG, "re request history");
@@ -143,9 +143,9 @@ void
 SesameLock::test_timeout() {
 	auto now = esphome::millis();
 	if (HISTORY_TIMEOUT) {
-		if (last_history_requested && now - last_history_requested > HISTORY_TIMEOUT) {
+		if (history_timeout_started && now - history_timeout_started > HISTORY_TIMEOUT) {
 			ESP_LOGW(TAG, "History receive timeout");
-			last_history_requested = 0;
+			history_timeout_started = 0;
 			get_history_set().clear_received_values();
 			publish_lock_history_state();
 		}
@@ -292,7 +292,6 @@ SesameLock::reflect_status_changed() {
 		if (using_history()) {
 			if (parent_->sesame.request_history()) {
 				ESP_LOGD(TAG, "History requested");
-				last_history_requested = millis();
 			} else {
 				ESP_LOGW(TAG, "Failed to request history");
 				get_history_set().clear_received_values();
@@ -328,6 +327,9 @@ SesameLock::update_lock_state(lock::LockState new_state) {
 	} else {
 		if (!using_history() || fast_notify) {
 			publish_lock_state(is_bot1());
+		}
+		if (using_history()) {
+			history_timeout_started = millis();
 		}
 	}
 }

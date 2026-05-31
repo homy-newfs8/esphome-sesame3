@@ -113,7 +113,7 @@ class SesameLock : public lock::Lock, public Feature {
 	const char* TAG;
 	const char* default_history_tag = "";
 	uint32_t jam_detection_started = 0;
-	uint32_t last_history_requested = 0;
+	uint32_t history_timeout_started = 0;
 	history_set hset[2];
 	lock::LockState lock_state = lock::LockState::LOCK_STATE_NONE;
 	lock::LockState unknown_state_alternative = lock::LockState::LOCK_STATE_NONE;
