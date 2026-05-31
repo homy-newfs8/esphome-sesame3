@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.28.0] 2026-05-xx
+- Add `history_scaled_voltage2`, `history_battery_pct2`, `history_extra` to lock.
+- Add `all_history_*` params to lock.
+- Add model types: `sesame_5_us`, `sesame_6`, `sesame_6_pro`, `open_sensor_2`, `sesame_touch_2`, `sesame_touch_2_pro`, `sesame_face_2`, `sesame_face_2_pro`, `sesame_face_2_ai`, `sesame_face_2_pro_ai`, `sesame_bot_3`
+- Reduced unnecessary history request messages (improving connection stability).
+
 ## [v0.27.1] 2026-04-12
 - More ESPHome 2026.4.0 compatibility
 

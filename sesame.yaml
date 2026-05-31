@@ -10,7 +10,7 @@ external_components:
   - source:
       type: git
       url: https://github.com/homy-newfs8/esphome-sesame3
-      ref: v0.27.0
+      ref: v0.28.0
     components: [sesame, sesame_ble]
   # - source: "components"
   #   components: [sesame, sesame_ble]
@@ -18,7 +18,7 @@ external_components:
 esp32:
   board: esp32-s3-devkitc-1
   framework:
-    type: arduino
+    type: esp-idf
     sdkconfig_options:
       CONFIG_BT_ENABLED: y
       CONFIG_BT_NIMBLE_ENABLED: y
@@ -105,11 +105,11 @@ sesame:
   - id: sesame1
     ## model: Requried: sesame_5 / sesame_5_pro / sesame_touch / sesame_touch_pro / open_sensor / sesame_bike_2 / sesame_4 / sesame_3 / sesame_bot / sesame_bike
     model: sesame_5
-    uuid: !secret sesame5_uuid
+    uuid: !secret sesame5_1_uuid
     ## public_key: Required for sesame_3 / sesame_4 / sesame_bot / sesame_bike
     ## for sesame_5 / sesame_5_pro comment out public_key line or specify any string (will be ignored)
     public_key: ""
-    secret: !secret sesame5_secret
+    secret: !secret sesame5_1_secret
     lock:
       name: Lock1
       id: lock_1
@@ -126,6 +126,16 @@ sesame:
         name: "Lock1_history_type"
       history_tag_type:
         name: "Lock1_history_tag_type"
+      history_scaled_voltage:
+        name: "Lock1_history_scaled_voltage"
+      history_battery_pct:
+        name: "Lock1_history_battery_pct"
+      history_scaled_voltage2:
+        name: "Lock1_history_scaled_voltage2"
+      history_battery_pct2:
+        name: "Lock1_history_battery_pct2"
+      history_extra:
+        name: "Lock1_history_extra"
     ## expose battery remaining percentage with specified name
     battery_pct:
       name: "Lock1_battery_level"

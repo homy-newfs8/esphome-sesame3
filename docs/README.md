@@ -73,7 +73,7 @@ esphome:
       - -DMBEDTLS_DEPRECATED_REMOVED -DCONFIG_BT_NIMBLE_ROLE_BROADCASTER_DISABLED -DCONFIG_BT_NIMBLE_ROLE_PERIPHERAL_DISABLED
 # Configure the maximum number of connections as required
       - -DCONFIG_BT_NIMBLE_MAX_CONNECTIONS=4
-      - -DCONFIG_MBEDTLS_CMAC_C	-DUSE_FRAMEWORK_MBEDTLS_CMAC
+      - -DCONFIG_MBEDTLS_CMAC_C -DUSE_FRAMEWORK_MBEDTLS_CMAC
   min_version: 2025.7.0
 
 esp32:
@@ -133,7 +133,34 @@ See [below](#identify-parameter-values-for-sesame-devices) for information on ho
 
 ## Configuration variables
 
-* **model** (**Required**): Model of SESAME. Use one of: `sesame_5`, `sesame_5_pro`, `sesame_bot_2`, `sesame_bike_2`, `sesame_face`, `sesame_face_pro`,`sesame_touch`, `sesame_touch_pro`, `remote`, `sesame_face`, `sesame_face_pro`, `sesame_face_ai`, `sesame_face_pro_ai`, `sesame_4`, `sesame_3`, `sesame_bot`, `sesame_bike`
+* **model** (**Required**): Model of SESAME. Use one of:
+  - `sesame_3`
+  - `sesame_bot`
+  - `sesame_bike`
+  - `sesame_cycle`
+  - `sesame_4`
+  - `sesame_5`
+  - `sesame_bike_2`
+  - `sesame_5_pro`
+  - `sesame_touch_pro`
+  - `sesame_touch`
+  - `remote`
+  - `sesame_5_us`
+  - `sesame_bot_2`
+  - `sesame_face_pro`
+  - `sesame_face`
+  - `sesame_6`
+  - `sesame_6_pro`
+  - `sesame_face_pro_ai`
+  - `sesame_face_ai`
+  - `open_sensor_2`
+  - `sesame_touch_2`
+  - `sesame_touch_2_pro`
+  - `sesame_face_2`
+  - `sesame_face_2_pro`
+  - `sesame_face_2_ai`
+  - `sesame_face_2_pro_ai`
+  - `sesame_bot_3`
 * **uuid** (**Optional**, string): UUID of SESAME. `uuid` or `address` must be specified, see [below](#identify-parameter-values-for-sesame-devices).
 * **address** (**Optional** for SESAME OS3 models, **Required** for SESAME OS2 models, string): Bluetooth MAC Address of SESAME. `uuid` or `address` must be specified, see [below](#identify-parameter-values-for-sesame-devices).
 * **secret** (**Required**, string): See [below](#identify-parameter-values-for-sesame-devices).
@@ -148,49 +175,84 @@ See [below](#identify-parameter-values-for-sesame-devices) for information on ho
 ### Expose SESAME status as sensors
 
 * **battery_pct** (*Optional*, [Sensor](https://esphome.io/components/sensor/#config-sensor)): See [below](#expose-sesame-battery-information-as-sensor-value)
-	* **name** (**Required**, string): The name of the battery level sensor.
-	* All other options from [sensor](https://esphome.io/components/sensor/#config-sensor)
+  * **id** (*Optional*, string): Manually specify the ID for code generation. At least one of id and name must be specified.
+  * **name** (*Optional*, string): The name of the sensor. At least one of id and name must be specified.
+  * All other options from [sensor](https://esphome.io/components/sensor/#config-sensor)
 * **battery_voltage** (*Optional*, [Sensor](https://esphome.io/components/sensor/#config-sensor)): See [below](#expose-sesame-battery-information-as-sensor-value)
-	* **name** (**Required**, string): The name of the voltage sensor.
-	* All other options from [sensor](https://esphome.io/components/sensor/#config-sensor)
+  * **id** (*Optional*, string): Manually specify the ID for code generation. At least one of id and name must be specified.
+  * **name** (*Optional*, string): The name of the sensor. At least one of id and name must be specified.
+  * All other options from [sensor](https://esphome.io/components/sensor/#config-sensor)
 * **battery_critical** (*Optional*, [Binary Sensor](https://esphome.io/components/binary_sensor/#base-binary-sensor-configuration)): SESAME battery critical state is exposed as a binary sensor.
-	* **name** (**Required**, string): The name of connection sensor.
+  * **id** (*Optional*, string): Manually specify the ID for code generation. At least one of id and name must be specified.
+  * **name** (*Optional*, string): The name of the sensor. At least one of id and name must be specified.
   * All other options from [binary_sensor](https://esphome.io/components/binary_sensor/#base-binary-sensor-configuration)
 * **connection_sensor** (*Optional*, [Binary Sensor](https://esphome.io/components/binary_sensor/#base-binary-sensor-configuration)): SESAME connection state is exposed as a binary sensor.
-	* **name** (**Required**, string): The name of connection sensor.
+  * **id** (*Optional*, string): Manually specify the ID for code generation. At least one of id and name must be specified.
+  * **name** (*Optional*, string): The name of the sensor. At least one of id and name must be specified.
   * All other options from [binary_sensor](https://esphome.io/components/binary_sensor/#base-binary-sensor-configuration)
 
 ## Lock specific variables
 
-For lock devices (`sesame_5`, `sesame_5_pro`, `sesame_4`, `sesame_3`, `sesame_bot`, `sesame_bike`, `sesame_bike_2`), lock functionality can be used.
+For lock devices (`sesame_5`, `sesame_5_pro`, `sesame_4`, `sesame_3`, `sesame_bot`, `sesame_bike`, `sesame_bike_2`, `sesame_5_us`, `sesame_6`, `sesame_6_pro`), lock functionality can be used.
 
 In addition to base [Lock](https://esphome.io/components/lock/#base-lock-configuration) variables:
 
 * **tag** (*Optional*, string): Tag value recorded on operation history. Defaults to "ESPHome". If you want to use various tag values on automation, see [below](#using-various-tag-values-on-operation).
 * **history_tag** (*Optional*, [Text Sensor](https://esphome.io/components/text_sensor/#base-text-sensor-configuration)): See [below](#operation-history-tag-and-history-type)
-  * **name** (**Required**, string): The name of the history tag text_sensor.
+  * **id** (*Optional*, string): Manually specify the ID for code generation. At least one of id and name must be specified.
+  * **name** (*Optional*, string): The name of the sensor. At least one of id and name must be specified.
   * All other options from [text_sensor](https://esphome.io/components/text_sensor/#base-text-sensor-configuration)
 * **history_type** (*Optional*, [Sensor](https://esphome.io/components/sensor/#config-sensor)): See [below](#operation-history-tag-and-history-type)
-  * **name** (**Required**, string): The name of the history type sensor.
+  * **id** (*Optional*, string): Manually specify the ID for code generation. At least one of id and name must be specified.
+  * **name** (*Optional*, string): The name of the sensor. At least one of id and name must be specified.
   * All other options from [sensor](https://esphome.io/components/sensor/#config-sensor)
 * **trigger_type** (*Optional*, Sensor): Deprecated. Use history_tag_type instead.
+  * **id** (*Optional*, string): Manually specify the ID for code generation. At least one of id and name must be specified.
+  * **name** (*Optional*, string): The name of the sensor. At least one of id and name must be specified.
+  * All other options from [sensor](https://esphome.io/components/sensor/#config-sensor)
 * **history_tag_type** (*Optional*, [Sensor](https://esphome.io/components/sensor/#config-sensor)): See [below](#history-tag-uuid-and-history-tag-type)
-  * **name** (**Required**, string): The name of the history type sensor.
+  * **id** (*Optional*, string): Manually specify the ID for code generation. At least one of id and name must be specified.
+  * **name** (*Optional*, string): The name of the sensor. At least one of id and name must be specified.
   * All other options from [sensor](https://esphome.io/components/sensor/#config-sensor)
 * **history_scaled_voltage** (*Optional*, [Sensor](https://esphome.io/components/sensor/#config-sensor)): The voltage reported by the device that performed the lock/unlock (SESAME Touch / Remote / OpenSensor / Face). The value is normalized to the equivalent for two batteries (full charge = 7.2V) regardless of model. Some models may only report voltage when locking.
-* **history_battery_pct** (*Optional*, [Sensor](https://esphome.io/components/sensor/#config-sensor)): Battery percentage (%) calculated from the voltage reported by the triggering device. The Android app applies a special conversion table only for the Open Sensor, but this component uses the same table for the Remote nano since it uses the same battery.
-  * **name** (**Required**, string): The name of the history battery percentage sensor.
+  * **id** (*Optional*, string): Manually specify the ID for code generation. At least one of id and name must be specified.
+  * **name** (*Optional*, string): The name of the sensor. At least one of id and name must be specified.
   * All other options from [sensor](https://esphome.io/components/sensor/#config-sensor)
+* **history_battery_pct** (*Optional*, [Sensor](https://esphome.io/components/sensor/#config-sensor)): Battery percentage (%) calculated from the voltage reported by the triggering device. The Android app applies a special conversion table only for the Open Sensor, but this component uses the same table for the Remote nano since it uses the same battery.
+  * **id** (*Optional*, string): Manually specify the ID for code generation. At least one of id and name must be specified.
+  * **name** (*Optional*, string): The name of the sensor. At least one of id and name must be specified.
+  * All other options from [sensor](https://esphome.io/components/sensor/#config-sensor)
+* **history_scaled_voltage2** (*Optional*, [Sensor](https://esphome.io/components/sensor/#config-sensor)): The second voltage reported by the device that performed the lock/unlock (SESAME Touch / Remote / OpenSensor / Face). The value is normalized to the equivalent for two batteries (full charge = 7.2V) regardless of model. Some models may only report voltage when locking.
+  * **id** (*Optional*, string): Manually specify the ID for code generation. At least one of id and name must be specified.
+  * **name** (*Optional*, string): The name of the sensor. At least one of id and name must be specified.
+  * All other options from [sensor](https://esphome.io/components/sensor/#config-sensor)
+* **history_battery_pct2** (*Optional*, [Sensor](https://esphome.io/components/sensor/#config-sensor)): Battery percentage (%) calculated from the voltage2 reported by the triggering device. The Android app applies a special conversion table only for the Open Sensor, but this component uses the same table for the Remote nano since it uses the same battery.
+  * **id** (*Optional*, string): Manually specify the ID for code generation. At least one of id and name must be specified.
+  * **name** (*Optional*, string): The name of the sensor. At least one of id and name must be specified.
+  * All other options from [sensor](https://esphome.io/components/sensor/#config-sensor)
+* **history_extra** (*Optional*, [Text Sensor](https://esphome.io/components/text_sensor/#base-text-sensor-configuration)): See [below](#history_extra-text_sensor)
+  * **id** (*Optional*, string): Manually specify the ID for code generation. At least one of id and name must be specified.
+  * **name** (*Optional*, string): The name of the sensor. At least one of id and name must be specified.
+  * All other options from [text_sensor](https://esphome.io/components/text_sensor/#base-text-sensor-configuration)
 * **fast_notify** (*Optional*, bool): Notify lock status immediately on detecting status changed. If false and `history_tag` or `history_type` defined, lock notification is postponed until history information has been received. Default is `false`.
 * **unknown_state_alternative** (**Deprecated**, *Optional*, lock_state): (As of Home Assistant 2025.10.0, `NONE` state is properly treated as `UNKNOWN`)\
 If the lock state of SESAME is unknown (for example, before connecting or during disconnection), this module notifies HomeAssistant of the `NONE` state. Currently, HomeAssinstant seems to treat the `NONE` state as "Unlocked". <br/>
 If you don't want it to be treated as "Unlocked", you can send the unknown state as any other state (candidates: `NONE`, `LOCKED`, `UNLOCKED`, `JAMMED`, `LOCKING`, `UNLOCKING`). If not set as this variable, this module will not send `LOCKING` and `UNLOCKING`, so you can write automation scripts that interpret these values as "UNKNOWN".
 * **unknown_state_timeout** (*Optional*, [Time](https://esphome.io/guides/configuration-types#config-time)): If you do not want disconnection from SESAME to be immediately treated as unknown, set a timeout value with this variable. Defaults to `20s`.
+* See [Non filtered history sensors](#not-filtered-history-sensors) for following `all_` prefixed sensors explanation.
+  * **all_history_tag** (*Optional*, [Text Sensor](https://esphome.io/components/text_sensor/#base-text-sensor-configuration))
+  * **all_history_type** (*Optional*, [Sensor](https://esphome.io/components/sensor/#config-sensor))
+  * **all_history_tag_type** (*Optional*, [Sensor](https://esphome.io/components/sensor/#config-sensor))
+  * **all_history_scaled_voltage** (*Optional*, [Sensor](https://esphome.io/components/sensor/#config-sensor))
+  * **all_history_battery_pct** (*Optional*, [Sensor](https://esphome.io/components/sensor/#config-sensor))
+  * **all_history_scaled_voltage2** (*Optional*, [Sensor](https://esphome.io/components/sensor/#config-sensor))
+  * **all_history_battery_pct2** (*Optional*, [Sensor](https://esphome.io/components/sensor/#config-sensor))
+  * **all_history_extra** (*Optional*, [Text Sensor](https://esphome.io/components/text_sensor/#base-text-sensor-configuration))
 
 ## Bot specific variables (From v0.11.0)
 
 For `sesame_bot`, you can specify [lock](#lock-specific-variables) or [bot](#bot-specific-variables-from-v0110).
-For `sesame_bot_2`, [bot](#bot-specific-variables-from-v0110) can be used.
+For `sesame_bot_2` / `sesame_bot_3`, [bot](#bot-specific-variables-from-v0110) can be used.
 See [bot usage](#sesame-bot-usage) for detailed example.
 
 * **bot**: Bot settings section marker.
@@ -387,6 +449,8 @@ History is Lock specific feature, so define these sensors under `lock:` object.
 |    17 | WEB_UNLOCK            | By [Official Web API](https://doc.candyhouse.co/ja/SesameAPI/) |
 |    18 | BLE_CLICK             | SESAME bot (Not listed in Android API)                         |
 |    21 | DRIVE_CLICKED         | SESAME bot (Not listed in Android API)                         |
+|    90 | Open                  | Open Sensor / 2 (Stored in `all_` prefixed history sensors)    |
+|    91 | Close                 | Open Sensor / 2 (Stored in `all_` prefixed history sensors)    |
 
 ## History TAG UUID and history tag type
 
@@ -467,6 +531,25 @@ Cited from [Protocol specification](https://github.com/CANDY-HOUSE/API_document/
 |    16 | android_wifi   |                      |
 |    17 | ios_wifi       |                      |
 
+## Supplemental information about history handling
+### `history_extra` text_sensor
+The `history_extra` and `all_history_extra` sensors contain additional data from history messages received from SESAME devices.
+
+SESAME trigger devices such as Sesame Touch, Sesame Face, Remote, and Open Sensor transmit commands that include their own battery voltage information (accessible via sensors like `history_battery_voltage` and `history_battery_pct`).
+
+Additionally, the Open Sensor and Open Sensor 2 also transmit extra undocumented bytes alongside this data. These bytes are converted into a hexadecimal string and stored in the `history_extra` and `all_history_extra` text sensors.
+
+Currently, Open Sensor devices send the following byte structure:
+| Index | Content                                                                                                      |
+|-------|--------------------------------------------------------------------------------------------------------------|
+| 0     | Command (`5a`: Open, `5b`: Close)                                                                        |
+| 1     | Device/State Identifier:<br>`ff`: Open Sensor<br>`00`: Switch Off (Open Sensor 2)<br>`01`: Switch On (Open Sensor 2) |
+
+### Not filtered history sensors
+Normally, history sensors such as `history_tag` and `history_type` are updated only when the lock state changes.
+In contrast, non-filtered sensors like `all_history_tag` and `all_history_type` are updated for every received history event.
+For example, a door-open event from an Open Sensor does not change the SESAME lock state, but the event is still reported by SESAME.
+
 # SESAME bot usage
 
 ## As lock device
@@ -483,7 +566,7 @@ sesame:
 
 ## Run the script directory
 
-The `sesame_bot_2` device cannot be used as `lock` device. You can specify `bot` settings instead.
+The `sesame_bot_2` / `sesame_bot_3` device cannot be used as `lock` device. You can specify `bot` settings instead.
 
 ```yaml
 sesame:
@@ -505,7 +588,7 @@ To control a Bot, actions must be defined. You can define action button or API s
 
 ### Define Bot buttons on ESPHome
 
-SESAME bot 2 has 10 moving scripts (Can edit on smartphone app). Define button on specific script as follows (Script numbers range from 0 to 9 for `sesame_bot_2` devices, and from 0 to 2 for `sesame_bot` devices).
+SESAME bot 2 / 3 has 10 moving scripts (Can edit on smartphone app). Define button on specific script as follows (Script numbers range from 0 to 9 for `sesame_bot_2` / `sesame_bot_3` devices, and from 0 to 2 for `sesame_bot` devices).
 
 ```yaml
 button:
