@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.28.0] 2026-05-xx
+## [v0.28.0] 2026-05-31
 - Add `history_scaled_voltage2`, `history_battery_pct2`, `history_extra` to lock.
 - Add `all_history_*` params to lock.
 - Add model types: `sesame_5_us`, `sesame_6`, `sesame_6_pro`, `open_sensor_2`, `sesame_touch_2`, `sesame_touch_2_pro`, `sesame_face_2`, `sesame_face_2_pro`, `sesame_face_2_ai`, `sesame_face_2_pro_ai`, `sesame_bot_3`
