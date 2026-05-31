@@ -12,6 +12,7 @@ using history_tag_type_t = libsesame3bt::history_tag_type_t;
 using libsesame3bt::Sesame;
 using libsesame3bt::SesameClient;
 using Status = SesameClient::Status;
+namespace util = libsesame3bt::core::util;
 
 namespace {
 
@@ -41,7 +42,7 @@ SesameLock::init() {
 			         history.record_id, static_cast<uint8_t>(history.type), history.tag_len, history.tag_len, history.tag,
 			         history.scaled_voltage, history.scaled_voltage2);
 			if (history.extra.size() > 0) {
-				ESP_LOGD(TAG, "hist extra: %s", libsesame3bt::core::util::bin2hex(history.extra.data(), history.extra.size()).c_str());
+				ESP_LOGD(TAG, "hist extra: %s", util::bin2hex(history.extra.data(), history.extra.size()).c_str());
 			} else {
 				ESP_LOGD(TAG, "hist extra: (none)");
 			}
@@ -63,7 +64,6 @@ SesameLock::init() {
 				if (last_history_requested > 0 && history_type_matched(lock_state, history.type)) {
 					last_history_requested = 0;
 					parent_->defer([this]() { publish_lock_history_state(); });
-					return;
 				}
 				if (get_all_history_set().using_history()) {
 					parent_->defer([this]() { publish_all_history_state(); });
@@ -275,7 +275,7 @@ void
 SesameLock::reflect_status_changed() {
 	const auto& sesame_status = parent_->sesame_status;
 	if (!sesame_status) {
-		// update_lock_state(LockState::LOCK_STATE_NONE);
+		update_lock_state(LockState::LOCK_STATE_NONE);
 		return;
 	}
 	if (is_bot1()) {
@@ -290,8 +290,12 @@ SesameLock::reflect_status_changed() {
 		}
 	} else {
 		if (using_history()) {
-			if (!parent_->sesame.request_history()) {
+			if (parent_->sesame.request_history()) {
+				ESP_LOGD(TAG, "History requested");
+				last_history_requested = millis();
+			} else {
 				ESP_LOGW(TAG, "Failed to request history");
+				get_history_set().clear_received_values();
 			}
 		}
 	}
@@ -324,16 +328,6 @@ SesameLock::update_lock_state(lock::LockState new_state) {
 	} else {
 		if (!using_history() || fast_notify) {
 			publish_lock_state(is_bot1());
-		}
-		if (using_history()) {
-			if (parent_->sesame.request_history()) {
-				ESP_LOGD(TAG, "History requested");
-				last_history_requested = millis();
-			} else {
-				ESP_LOGW(TAG, "Failed to request history");
-				get_history_set().clear_received_values();
-				publish_lock_history_state();
-			}
 		}
 	}
 }
@@ -374,7 +368,7 @@ history_set::set_history_sensors() {
 	}
 	set_battery_pct_sensor(history_battery_pct2_sensor, recv_scaled_voltage2);
 	if (history_extra_sensor) {
-		history_extra_sensor->state = recv_extra;
+		history_extra_sensor->state = util::bin2hex(recv_extra.data(), recv_extra.size());
 	}
 }
 
