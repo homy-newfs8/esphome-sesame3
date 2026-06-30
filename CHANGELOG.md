@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.28.1] 2026-06-30
+- Bump libsesame3bt version (improve connection stability when using the history feature).
+
 ## [v0.28.0] 2026-05-31
 - Add `history_scaled_voltage2`, `history_battery_pct2`, `history_extra` to lock.
 - Add `all_history_*` params to lock.

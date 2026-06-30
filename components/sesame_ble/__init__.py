@@ -20,7 +20,7 @@ CONFIG_SCHEMA = cv.Schema(
 async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
     await esp32_ble_tracker.register_ble_device(var, config)
-    cg.add_library("libsesame3bt", None, "https://github.com/homy-newfs8/libsesame3bt#0.33.0")
+    cg.add_library("libsesame3bt", None, "https://github.com/homy-newfs8/libsesame3bt#0.33.1")
 
     if not CORE.using_arduino:
         esp32.add_idf_component(name="h2zero/esp-nimble-cpp", ref="~2.5.0")
