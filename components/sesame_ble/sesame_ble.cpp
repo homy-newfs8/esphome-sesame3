@@ -30,7 +30,7 @@ model_str(Sesame::model_t model) {
 			return "4";
 		case Sesame::model_t::sesame_5:
 			return "5";
-		case Sesame::modl_t::bike_2:
+		case Sesame::model_t::sesame_bike_2:
 			return "Bike 2";
 		case Sesame::model_t::sesame_5_pro:
 			return "5 PRO";
