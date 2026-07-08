@@ -3,6 +3,12 @@
 [ESPHome](https://esphome.io/) Smart Lock component for CANDY HOUSE [SESAME 5](https://jp.candyhouse.co/products/sesame5) / [SESAME 5 PRO](https://jp.candyhouse.co/products/sesame5-pro) / [SESAME Bot 2](https://jp.candyhouse.co/products/sesamebot2) / SESAME bot / SESAME 3 / SESAME 4 / SESAME Bike, control via Bluetooth LE
 
 > [!NOTE]
+> `sesabe_bot_3` cannot be used in v0.28.1. Please use `sesame_bot_2` instead (`sesame_bot_2` is compatible with SESAME Bot 3).
+
+> [!NOTE]
+> The `sesame_ble` component cannot be used in v0.28.1. Please refer to https://github.com/homy-newfs8/esphome-sesame3/issues/16#issuecomment-4895154510 for a workaround.
+
+> [!NOTE]
 > I have observed that this component may become unstable when used on
 > ESP32-PICO-D4 with ESPHome version 2026.3.x (e.g., M5Stack Atom Lite, M5Stick-C).\
 > If you experience instability, please try using an newer or earlier version of ESPHome, such as 2026.4.x.
