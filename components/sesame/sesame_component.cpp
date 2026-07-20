@@ -21,7 +21,7 @@ class SesameServerComponent {
 
 namespace {
 
-constexpr uint32_t CONNECT_RETRY_INTERVAL = 3'000;
+constexpr uint32_t CONNECT_RETRY_INTERVAL = 13'000;
 constexpr uint32_t CONNECT_STATE_TIMEOUT_MARGIN = 5'000;
 constexpr uint32_t AUTHENTICATE_TIMEOUT = 5'000;
 constexpr uint32_t REBOOT_DELAY_SEC = 5;
