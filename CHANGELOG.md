@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.28.2] 2026-07-23
+- Fix `sesame_bot_3` support.
+- Compilation problem of `sesame_ble` fixed (still cannot use with `esp-idf`).
+
 ## [v0.28.1] 2026-06-30
 - Bump libsesame3bt version (improve connection stability when using the history feature).
 
