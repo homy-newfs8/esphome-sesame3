@@ -2,6 +2,15 @@
 
 [ESPHome](https://esphome.io/) Smart Lock component for CANDY HOUSE [SESAME 5](https://jp.candyhouse.co/products/sesame5) / [SESAME 5 PRO](https://jp.candyhouse.co/products/sesame5-pro) / [SESAME Bot 2](https://jp.candyhouse.co/products/sesamebot2) / SESAME bot / SESAME 3 / SESAME 4 / SESAME Bike, control via Bluetooth LE
 
+>[!NOTE]
+> To use this component with ESPHome 2026.7.0 or later, specify `toolchain: platformio` in `esp32` configuration. Like below:
+> ```yaml
+> esp32:
+>   ⋮
+>   toolchain: platformio
+>   ⋮
+> ```
+
 > [!NOTE]
 > The `sesame_ble` component cannot be used in v0.28.1. Please refer to https://github.com/homy-newfs8/esphome-sesame3/issues/16#issuecomment-4895154510 for a workaround.
 
