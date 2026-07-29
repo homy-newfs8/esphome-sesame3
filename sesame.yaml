@@ -3,7 +3,8 @@ esphome:
   friendly_name: Entrance
   platformio_options:
     build_flags:
-      - -Wall -Wextra
+      - -Wall
+      - -Wextra
       - -DUSE_FRAMEWORK_MBEDTLS_CMAC
   min_version: 2025.10.0
 external_components:

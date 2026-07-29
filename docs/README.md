@@ -3,7 +3,8 @@
 [ESPHome](https://esphome.io/) Smart Lock component for CANDY HOUSE [SESAME 5](https://jp.candyhouse.co/products/sesame5) / [SESAME 5 PRO](https://jp.candyhouse.co/products/sesame5-pro) / [SESAME Bot 2](https://jp.candyhouse.co/products/sesamebot2) / SESAME bot / SESAME 3 / SESAME 4 / SESAME Bike, control via Bluetooth LE
 
 >[!NOTE]
-> To use this component with ESPHome 2026.7.0 or later, specify `toolchain: platformio` in `esp32` configuration. Like below:
+> To use this component with ESPHome 2026.7.0 to 2026.7.2, specify `toolchain: platformio` in `esp32` configuration. Like below:
+> (In ESPHome 2026.7.3 this limitation was fixed)
 > ```yaml
 > esp32:
 >   ⋮
@@ -55,7 +56,8 @@ NimBLE must be enabled by `sdkconfig_options`, and many compile options moved to
 esphome:
   platformio_options:
     build_flags:
-      - -Wall -Wextra
+      - -Wall
+      - -Wextra
       - -DUSE_FRAMEWORK_MBEDTLS_CMAC
   min_version: 2025.10.0
 
