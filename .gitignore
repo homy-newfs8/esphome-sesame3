@@ -5,3 +5,5 @@
 /.esphome/
 secrets.yaml
 __pycache__
+/.pio/
+/.crossnote/

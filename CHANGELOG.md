@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.28.3] 2026-08-08
+- Fix Bot2/3, Bike2 status handling.
+
 ## [v0.28.2] 2026-07-23
 - Fix `sesame_bot_3` support.
 - Compilation problem of `sesame_ble` fixed (still cannot use with `esp-idf`).
