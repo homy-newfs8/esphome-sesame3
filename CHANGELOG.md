@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.29.0] 2026-08-09
+- When sending a command to the SESAME lock device, the lock state is set to "LOCKING" or "UNLOCKING" until the actual state is received.
+
 ## [v0.28.3] 2026-08-08
 - Fix Bot2/3, Bike2 status handling.
 
