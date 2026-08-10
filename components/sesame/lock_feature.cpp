@@ -487,43 +487,29 @@ SesameLock::operable_warn() const {
 	return true;
 }
 
-// void
-// SesameLock::control(const lock::LockCall& call) {
-// 	if (!operable_warn()) {
-// 		return;
-// 	}
-// 	if (call.get_state()) {
-// 		auto tobe = *call.get_state();
-// 		if (tobe == lock::LOCK_STATE_LOCKED) {
-// 			parent_->sesame.lock(default_history_tag);
-// 		} else if (tobe == lock::LOCK_STATE_UNLOCKED) {
-// 			parent_->sesame.unlock(default_history_tag);
-// 		}
-// 	}
-// }
 void
 SesameLock::control(const lock::LockCall& call) {
-    if (!operable_warn()) {
-        return;
-    }
+	if (!operable_warn()) {
+		return;
+	}
 
-    if (call.get_state()) {
-        auto tobe = *call.get_state();
+	if (call.get_state()) {
+		auto tobe = *call.get_state();
 
-        if (tobe == lock::LOCK_STATE_LOCKED) {
-            if (parent_->sesame.lock(default_history_tag)) {
-                publish_state(lock::LOCK_STATE_LOCKING);
-            } else {
-                ESP_LOGW(TAG, "Failed to send lock command");
-            }
-        } else if (tobe == lock::LOCK_STATE_UNLOCKED) {
-            if (parent_->sesame.unlock(default_history_tag)) {
-                publish_state(lock::LOCK_STATE_UNLOCKING);
-            } else {
-                ESP_LOGW(TAG, "Failed to send unlock command");
-            }
-        }
-    }
+		if (tobe == lock::LOCK_STATE_LOCKED) {
+			if (parent_->sesame.lock(default_history_tag)) {
+				publish_state(lock::LOCK_STATE_LOCKING);
+			} else {
+				ESP_LOGW(TAG, "Failed to send lock command");
+			}
+		} else if (tobe == lock::LOCK_STATE_UNLOCKED) {
+			if (parent_->sesame.unlock(default_history_tag)) {
+				publish_state(lock::LOCK_STATE_UNLOCKING);
+			} else {
+				ESP_LOGW(TAG, "Failed to send unlock command");
+			}
+		}
+	}
 }
 
 }  // namespace esphome::sesame_lock
