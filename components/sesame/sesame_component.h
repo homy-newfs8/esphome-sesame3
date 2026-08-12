@@ -47,10 +47,11 @@ class BinarySensorWithInvalidate : public binary_sensor::BinarySensor {
 
 enum class state_t : int8_t {
 	not_connected,
-	wait_connect,
+	wait_connect_turn,
 	connecting,
 	authenticating,
 	running,
+	wait_disconnected,
 	wait_reboot,
 	wait_server_disconnect
 };

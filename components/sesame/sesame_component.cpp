@@ -24,8 +24,9 @@ namespace {
 constexpr uint32_t CONNECT_RETRY_INTERVAL = 3'000;
 constexpr uint32_t CONNECT_STATE_TIMEOUT_MARGIN = 5'000;
 constexpr uint32_t AUTHENTICATE_TIMEOUT = 5'000;
-constexpr uint32_t REBOOT_DELAY_SEC = 5;
-constexpr uint32_t DISCONNECT_WAIT_TIMEOUT = 5'000;
+constexpr uint32_t REBOOT_DELAY_MSEC = 5'000;
+constexpr uint32_t SERVER_DISCONNECT_WAIT_TIMEOUT_MSEC = 5'000;
+constexpr uint32_t DISCONNECT_TIMEOUT_MSEC = 10'000;
 
 constexpr const char* STATIC_TAG = "sesame_lock";
 
@@ -166,9 +167,8 @@ void
 SesameComponent::disconnect() {
 	sesame.disconnect();
 	sesame_status.reset();
-	set_state(state_t::not_connected);
-	publish_connection_state(false);
-	ESP_LOGI(TAG, "Disconnected");
+	set_state(state_t::wait_disconnected);
+	ESP_LOGI(TAG, "Disconnecting");
 }
 
 void
@@ -181,7 +181,7 @@ SesameComponent::loop() {
 		case state_t::not_connected:
 			publish_connection_state(false);
 			if (connect_limit && connect_tried >= connect_limit) {
-				ESP_LOGE(TAG, "Cannot connect %d times, reboot after %lu secs", connect_tried, REBOOT_DELAY_SEC);
+				ESP_LOGE(TAG, "Cannot connect %d times, reboot after %lu secs", connect_tried, REBOOT_DELAY_MSEC / 1'000);
 				set_state(state_t::wait_reboot);
 				break;
 			}
@@ -189,11 +189,11 @@ SesameComponent::loop() {
 				if (!last_connect_attempted || now - last_connect_attempted >= CONNECT_RETRY_INTERVAL) {
 					last_connect_attempted = now;
 					enqueue_connect(this);
-					set_state(state_t::wait_connect);
+					set_state(state_t::wait_connect_turn);
 				}
 			}
 			break;
-		case state_t::wait_connect:
+		case state_t::wait_connect_turn:
 			if (can_connect(this)) {
 				ESP_LOGD(TAG, "My turn to connect");
 				if (server && server->has_trigger(ble_address)) {
@@ -209,7 +209,6 @@ SesameComponent::loop() {
 						set_state(state_t::connecting);
 					} else {
 						ESP_LOGW(TAG, "Failed to start connect rc=%d", get_last_error());
-						disconnect();
 						connect_done(this);
 						set_state(state_t::not_connected);
 					}
@@ -217,7 +216,7 @@ SesameComponent::loop() {
 			}
 			break;
 		case state_t::wait_server_disconnect:
-			if (now - state_started > DISCONNECT_WAIT_TIMEOUT) {
+			if (now - state_started > SERVER_DISCONNECT_WAIT_TIMEOUT_MSEC) {
 				ESP_LOGW(TAG, "Disconnect from server not finished");
 				connect_done(this);
 				set_state(state_t::not_connected);
@@ -230,7 +229,6 @@ SesameComponent::loop() {
 					set_state(state_t::connecting);
 				} else {
 					ESP_LOGW(TAG, "Failed to start connect rc=%d", get_last_error());
-					disconnect();
 					connect_done(this);
 					set_state(state_t::not_connected);
 				}
@@ -238,17 +236,16 @@ SesameComponent::loop() {
 			break;
 		case state_t::connecting:
 			if (now - state_started > connection_timeout + CONNECT_STATE_TIMEOUT_MARGIN) {
-				ESP_LOGE(TAG, "Connect timeout not occurred within expected time, reboot after %lu secs", REBOOT_DELAY_SEC);
+				ESP_LOGE(TAG, "Connect timeout not occurred within expected time, reboot after %lu secs", REBOOT_DELAY_MSEC / 1'000);
+				disconnect();
 				connect_done(this);
 				set_state(state_t::wait_reboot);
 				break;
 			}
 			if (server && server->has_trigger(ble_address) && server->has_session(ble_address)) {
-				ESP_LOGD(TAG, "Connected to server during connecting, disconnect again");
+				ESP_LOGD(TAG, "Connected to server during connecting, try again");
 				disconnect();
-				server->stop_advertising();
-				server->disconnect(ble_address);
-				set_state(state_t::wait_server_disconnect);
+				connect_done(this);
 				break;
 			}
 			if (sesame.get_state() == SesameClient::state_t::connected) {
@@ -258,14 +255,14 @@ SesameComponent::loop() {
 					set_state(state_t::authenticating);
 				} else {
 					ESP_LOGW(TAG, "Failed to start authenticate, rc=%d", get_last_error());
-					disconnect();
 					make_unknown();
+					disconnect();
 				}
 			} else if (sesame.get_state() != SesameClient::state_t::connecting) {
 				ESP_LOGW(TAG, "Failed to connect, rc=%d", get_last_error());
 				connect_done(this);
-				disconnect();
 				make_unknown();
+				disconnect();
 			}
 			break;
 		case state_t::authenticating:
@@ -279,20 +276,31 @@ SesameComponent::loop() {
 			            sesame.get_state() != SesameClient::state_t::authenticating) ||
 			           now - state_started > AUTHENTICATE_TIMEOUT) {
 				ESP_LOGW(TAG, "Failed to authenticate");
-				disconnect();
 				make_unknown();
+				disconnect();
 			}
 			break;
 		case state_t::running:
 			if (!always_connect && operation_requested.value == 0) {
 				disconnect();
 			} else if (sesame.get_state() != SesameClient::state_t::active) {
-				disconnect();
 				make_unknown();
+				disconnect();
+			}
+			break;
+		case state_t::wait_disconnected:
+			if (now - state_started > DISCONNECT_TIMEOUT_MSEC) {
+				ESP_LOGE(TAG, "Cannot disconnect for %lu seconds, reboot after %lu secs", DISCONNECT_TIMEOUT_MSEC / 1'000,
+				         REBOOT_DELAY_MSEC / 1'000);
+				set_state(state_t::wait_reboot);
+				break;
+			} else if (sesame.get_state() == SesameClient::state_t::idle) {
+				set_state(state_t::not_connected);
+				break;
 			}
 			break;
 		case state_t::wait_reboot:
-			if (now - state_started > REBOOT_DELAY_SEC * 1000) {
+			if (now - state_started > REBOOT_DELAY_MSEC) {
 				mark_failed();
 				App.safe_reboot();
 			}
