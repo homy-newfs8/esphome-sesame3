@@ -119,6 +119,7 @@ class SesameLock : public lock::Lock, public Feature {
 	lock::LockState unknown_state_alternative = lock::LockState::LOCK_STATE_NONE;
 	uint32_t unknown_state_started = 0;
 	uint32_t unknown_state_timeout = 20'000;
+	uint32_t moving_state_started = 0;
 	bool motor_moved = false;
 	bool fast_notify = false;
 
@@ -128,6 +129,7 @@ class SesameLock : public lock::Lock, public Feature {
 	bool using_history() const { return get_history_set().using_history() || get_all_history_set().using_history(); }
 	void test_timeout();
 	void test_unknown_state();
+	void test_moving_state();
 	void publish_lock_state(bool force_publish = false);
 	void update_lock_state(lock::LockState);
 	void publish_lock_history_state();

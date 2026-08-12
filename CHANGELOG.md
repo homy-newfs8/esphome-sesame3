@@ -1,6 +1,9 @@
 # Changelog
 
-## [v0.29.0] 2026-08-09
+## [v0.29.1] 2026-08-12
+- If a new lock state is not received for 3 seconds while in the LOCK_STATE_LOCKING or LOCK_STATE_UNLOCKING state, the last lock state is republished.
+
+## [v0.29.0] 2026-08-10
 - When sending a command to the SESAME lock device, the lock state is set to "LOCKING" or "UNLOCKING" until the actual state is received.
 
 ## [v0.28.3] 2026-08-08
