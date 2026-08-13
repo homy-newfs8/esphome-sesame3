@@ -16,9 +16,9 @@ namespace util = libsesame3bt::core::util;
 
 namespace {
 
-constexpr uint32_t OPERATION_TIMEOUT = 3'000;
 constexpr uint32_t JAMM_DETECTION_TIMEOUT = 3'000;
 constexpr uint32_t HISTORY_TIMEOUT = 4'000;
+constexpr uint32_t MOVING_TIMEOUT = 3'000;
 
 }  // namespace
 
@@ -458,6 +458,17 @@ SesameLock::loop() {
 	test_unknown_state();
 	if (parent_->my_state == state_t::running) {
 		test_timeout();
+		test_moving_state();
+	}
+}
+
+void
+SesameLock::test_moving_state() {
+	if (state == lock::LOCK_STATE_LOCKING || state == lock::LOCK_STATE_UNLOCKING) {
+		if (moving_state_started > 0 && millis() - moving_state_started > MOVING_TIMEOUT) {
+			publish_lock_state(lock_state);
+			moving_state_started = 0;
+		}
 	}
 }
 
@@ -499,12 +510,14 @@ SesameLock::control(const lock::LockCall& call) {
 		if (tobe == lock::LOCK_STATE_LOCKED) {
 			if (parent_->sesame.lock(default_history_tag)) {
 				publish_state(lock::LOCK_STATE_LOCKING);
+				moving_state_started = millis();
 			} else {
 				ESP_LOGW(TAG, "Failed to send lock command");
 			}
 		} else if (tobe == lock::LOCK_STATE_UNLOCKED) {
 			if (parent_->sesame.unlock(default_history_tag)) {
 				publish_state(lock::LOCK_STATE_UNLOCKING);
+				moving_state_started = millis();
 			} else {
 				ESP_LOGW(TAG, "Failed to send unlock command");
 			}
