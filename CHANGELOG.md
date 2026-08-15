@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.30.0] 2026-08-15
+- Bump libsesame3bt version.
+
 ## [v0.29.1] 2026-08-12
 - If a new lock state is not received for 3 seconds while in the LOCK_STATE_LOCKING or LOCK_STATE_UNLOCKING state, the last lock state is republished.
 
