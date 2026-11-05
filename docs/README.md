@@ -46,7 +46,7 @@ The build options differ depending on the version of ESPHome. See the example be
 
 If you want to use more than four SESAME devices with one ESP32 module, edit the `CONFIG_BT_NIMBLE_MAX_CONNECTIUONS` parameter (It might be a good idea to check the free memory with ESPHome's [Debug](https://esphome.io/components/debug.html) component).
 
-Select the ESP32 board you want to use. Choose Arduino or ESP-IDF framework.
+Select the ESP32 board you want to use.
 
 ## ESPHome 2025.10.0 or later
 
@@ -64,7 +64,7 @@ esphome:
 esp32:
   board: esp32-c3-devkitm-1
   framework:
-    type: arduino
+    type: esp-idf
     sdkconfig_options:
       CONFIG_BT_ENABLED: y
       CONFIG_BT_NIMBLE_ENABLED: y
@@ -73,9 +73,22 @@ esp32:
       CONFIG_BT_NIMBLE_CRYPTO_STACK_MBEDTLS: y
       CONFIG_BT_NIMBLE_ROLE_BROADCASTER_DISABLED: y
       CONFIG_BT_NIMBLE_ROLE_PERIPHERAL_DISABLED: y
+      CONFIG_MBEDTLS_CCM_C: y
 ```
 
-You can select `esp-idf` instead of arduino.
+> [!NOTE]
+> `CONFIG_MBEDTLS_CCM_C: y` required for ESPHome 2026.10.x (specifyint this options seems harmless for other ESPHome versions).
+
+### Toolchain / Framework compatibility on recent ESPHome versions
+
+Depending on the ESPHome versions, you can choose framework type, either `arduino` or `esp-idf`.
+
+| ESPHome version | Framework type | Toolchain                 |
+| --------------- | -------------- | ------------------------- |
+| 2026.8.x        | `esp-idf`      | `esp-idf` or `platformio` |
+|                 | `platformio`   | `esp-idf` or `platformio` |
+| 2026.9.x / 10.x | `esp-idf`      | `esp-idf` or `platformio` |
+|                 | `platformio`   | `platformio`              |
 
 ## ESPHome 2025.7.0 to 2025.9.x
 
@@ -103,7 +116,6 @@ external_components:
     components: [ sesame, sesame_ble ]
 ```
 
-
 # ESPHome 2025.5.x to 2025.6.x
 
 ```
@@ -120,7 +132,6 @@ esphome:
 ```
 
 (More older versions of ESPHome was supported by old versions of this component (not documented))
-
 
 # Configure for your SESAME
 

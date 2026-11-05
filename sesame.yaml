@@ -18,6 +18,7 @@ external_components:
 
 esp32:
   board: esp32-s3-devkitc-1
+  toolchain: esp-idf
   framework:
     type: esp-idf
     sdkconfig_options:
@@ -28,6 +29,7 @@ esp32:
       CONFIG_BT_NIMBLE_CRYPTO_STACK_MBEDTLS: y
       CONFIG_BT_NIMBLE_ROLE_BROADCASTER_DISABLED: y
       CONFIG_BT_NIMBLE_ROLE_PERIPHERAL_DISABLED: y
+      CONFIG_MBEDTLS_CCM_C: y
 
 ota:
   - platform: esphome
