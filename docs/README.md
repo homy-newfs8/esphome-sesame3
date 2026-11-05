@@ -63,6 +63,7 @@ esphome:
 
 esp32:
   board: esp32-c3-devkitm-1
+  toolchain: esp-idf
   framework:
     type: esp-idf
     sdkconfig_options:
