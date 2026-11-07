@@ -1,35 +1,23 @@
 esphome:
   name: entrance
   friendly_name: Entrance
-  platformio_options:
-    build_flags:
-      - -Wall
-      - -Wextra
-      - -DUSE_FRAMEWORK_MBEDTLS_CMAC
   min_version: 2025.10.0
 external_components:
   - source:
       type: git
       url: https://github.com/homy-newfs8/esphome-sesame3
-      ref: v0.31.0
+      ref: v0.31.1
     components: [sesame, sesame_ble]
   # - source: "components"
   #   components: [sesame, sesame_ble]
 
 esp32:
   board: esp32-s3-devkitc-1
-  toolchain: esp-idf
   framework:
     type: esp-idf
     sdkconfig_options:
-      CONFIG_BT_ENABLED: y
-      CONFIG_BT_NIMBLE_ENABLED: y
       # Configure the maximum number of connections as required (maximum: 9)
       CONFIG_BT_NIMBLE_MAX_CONNECTIONS: "6"
-      CONFIG_BT_NIMBLE_CRYPTO_STACK_MBEDTLS: y
-      CONFIG_BT_NIMBLE_ROLE_BROADCASTER_DISABLED: y
-      CONFIG_BT_NIMBLE_ROLE_PERIPHERAL_DISABLED: y
-      CONFIG_MBEDTLS_CCM_C: y
 
 ota:
   - platform: esphome

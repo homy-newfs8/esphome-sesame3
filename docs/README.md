@@ -2,23 +2,8 @@
 
 [ESPHome](https://esphome.io/) Smart Lock component for CANDY HOUSE [SESAME 5](https://jp.candyhouse.co/products/sesame5) / [SESAME 5 PRO](https://jp.candyhouse.co/products/sesame5-pro) / [SESAME Bot 2](https://jp.candyhouse.co/products/sesamebot2) / SESAME bot / SESAME 3 / SESAME 4 / SESAME Bike, control via Bluetooth LE
 
->[!NOTE]
-> To use this component with ESPHome 2026.7.0 to 2026.7.2, specify `toolchain: platformio` in `esp32` configuration. Like below:
-> (In ESPHome 2026.7.3 this limitation was fixed)
-> ```yaml
-> esp32:
->   ⋮
->   toolchain: platformio
->   ⋮
-> ```
-
 > [!NOTE]
-> The `sesame_ble` component cannot be used in v0.28.1. Please refer to https://github.com/homy-newfs8/esphome-sesame3/issues/16#issuecomment-4895154510 for a workaround.
-
-> [!NOTE]
-> I have observed that this component may become unstable when used on
-> ESP32-PICO-D4 with ESPHome version 2026.3.x (e.g., M5Stack Atom Lite, M5Stick-C).\
-> If you experience instability, please try using an newer or earlier version of ESPHome, such as 2026.4.x.
+> The `sesame_ble` component does not work on current version. Please refer to https://github.com/homy-newfs8/esphome-sesame3/issues/16#issuecomment-4895154510 for a workaround.
 
 > [!NOTE]
 > This component does not use ESPHome's built-in `BTClient`
@@ -36,7 +21,7 @@ external_components:
   - source:
       type: git
       url: https://github.com/homy-newfs8/esphome-sesame3
-      ref: v0.31.0
+      ref: v0.31.1
     components: [ sesame, sesame_ble ]
 ```
 
@@ -44,52 +29,29 @@ external_components:
 
 The build options differ depending on the version of ESPHome. See the example below.
 
-If you want to use more than four SESAME devices with one ESP32 module, edit the `CONFIG_BT_NIMBLE_MAX_CONNECTIUONS` parameter (It might be a good idea to check the free memory with ESPHome's [Debug](https://esphome.io/components/debug.html) component).
-
-Select the ESP32 board you want to use.
 
 ## ESPHome 2025.10.0 or later
 
-NimBLE must be enabled by `sdkconfig_options`, and many compile options moved to `sdkconfig_options` section.
+Select the ESP32 `board` you want to use.
+
+If you want to use more than four SESAME devices with one ESP32 module, set the `CONFIG_BT_NIMBLE_MAX_CONNECTIUONS` parameter (It might be a good idea to check the free memory with ESPHome's [Debug](https://esphome.io/components/debug.html) component).
 
 ```yaml
 esphome:
-  platformio_options:
-    build_flags:
-      - -Wall
-      - -Wextra
-      - -DUSE_FRAMEWORK_MBEDTLS_CMAC
   min_version: 2025.10.0
 
 esp32:
   board: esp32-c3-devkitm-1
-  toolchain: esp-idf
   framework:
     type: esp-idf
     sdkconfig_options:
-      CONFIG_BT_ENABLED: y
-      CONFIG_BT_NIMBLE_ENABLED: y
       # Configure the maximum number of connections as required (maximum: 9)
       CONFIG_BT_NIMBLE_MAX_CONNECTIONS: "6"
-      CONFIG_BT_NIMBLE_CRYPTO_STACK_MBEDTLS: y
-      CONFIG_BT_NIMBLE_ROLE_BROADCASTER_DISABLED: y
-      CONFIG_BT_NIMBLE_ROLE_PERIPHERAL_DISABLED: y
-      CONFIG_MBEDTLS_CCM_C: y
 ```
 
 > [!NOTE]
-> `CONFIG_MBEDTLS_CCM_C: y` required for ESPHome 2026.10.x (specifyint this options seems harmless for other ESPHome versions).
-
-### Toolchain / Framework compatibility on recent ESPHome versions
-
-Depending on the ESPHome versions, you can choose framework type, either `arduino` or `esp-idf`.
-
-| ESPHome version | Framework type | Toolchain                 |
-| --------------- | -------------- | ------------------------- |
-| 2026.8.x        | `esp-idf`      | `esp-idf` or `platformio` |
-|                 | `platformio`   | `esp-idf` or `platformio` |
-| 2026.9.x / 10.x | `esp-idf`      | `esp-idf` or `platformio` |
-|                 | `platformio`   | `platformio`              |
+> If you want to reduce the flash memory usage, and you are not using the BLE server functionality (e.g. esphome-sesame_server), add
+> `CONFIG_BT_NIMBLE_ROLE_BROADCASTER_DISABLED: y` and `CONFIG_BT_NIMBLE_ROLE_PERIPHERAL_DISABLED: y`.
 
 ## ESPHome 2025.7.0 to 2025.9.x
 
