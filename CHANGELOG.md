@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.31.1] 2026-11-07
+- Move mandatory build options to component setup script, removed from example and README.
+
 ## [v0.31.0] 2026-08-23
 - Bump libsesame3bt to 0.50.0
 
